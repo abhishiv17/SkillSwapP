@@ -3,14 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { GlassCard } from '@/components/shared/GlassCard';
-import { SkillBadge } from '@/components/shared/SkillBadge';
-import type { MarketplaceListing } from '@/lib/mock-data';
-import { Clock, Coins, ArrowRightLeft, BadgeCheck, Check, Send, Trophy, Zap, MessageSquare } from 'lucide-react';
-import { GradientButton } from '@/components/shared/GradientButton';
+import { SkillTag } from '@/components/dashboard/ui/SkillTag';
+import { Button } from '@/components/dashboard/ui/Button';
+import type { MarketplaceListing } from '@/types/marketplace';
+import { Clock, Coins, BadgeCheck, Check, Send, Trophy, Zap, MessageSquare } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface SkillCardProps {
   listing: MarketplaceListing;
@@ -22,7 +22,6 @@ export function SkillCard({ listing }: SkillCardProps) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'none' | 'pending' | 'accepted'>('none');
 
-  // Check existing connection status on mount
   useEffect(() => {
     if (!currentUser?.id || currentUser.id === listing.user.id) return;
     const supabase = createClient();
@@ -47,7 +46,6 @@ export function SkillCard({ listing }: SkillCardProps) {
     const supabase = createClient();
     
     try {
-      // Check if a connection already exists in EITHER direction
       const { data: existing } = await supabase
         .from('connections')
         .select('id, status, requester_id')
@@ -55,7 +53,6 @@ export function SkillCard({ listing }: SkillCardProps) {
         .maybeSingle();
 
       if (existing) {
-        // Connection already exists
         setConnectionStatus(existing.status as 'pending' | 'accepted');
         if (existing.status === 'accepted') {
           toast.info('You are already connected!');
@@ -66,7 +63,6 @@ export function SkillCard({ listing }: SkillCardProps) {
         return;
       }
 
-      // Create a new connection request
       const { error: connectionError } = await supabase
         .from('connections')
         .insert({
@@ -77,7 +73,6 @@ export function SkillCard({ listing }: SkillCardProps) {
         
       if (connectionError) throw connectionError;
       
-      // Fetch current user's profile to get their name
       const { data: userProfile } = await supabase
         .from('profiles')
         .select('username, full_name')
@@ -86,7 +81,6 @@ export function SkillCard({ listing }: SkillCardProps) {
         
       const myName = userProfile?.full_name || userProfile?.username || 'Someone';
 
-      // Send notification
       await supabase.from('notifications').insert({
         user_id: listing.user.id,
         type: 'connection_request',
@@ -106,111 +100,110 @@ export function SkillCard({ listing }: SkillCardProps) {
   };
 
   return (
-    <GlassCard hover className="flex flex-col h-full group">
-      {/* Header: user info */}
-      <div className="flex items-center gap-3 mb-4">
-        <Image
-          src={listing.user.avatar}
-          alt={listing.user.name || 'User avatar'}
-          width={40}
-          height={40}
-          className="w-10 h-10 rounded-full bg-[var(--bg-surface-solid)]"
-        />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
-              {listing.user.name}
-            </span>
-            {listing.user.isVerified && (
-              <BadgeCheck size={14} className="text-accent-amber shrink-0" />
+    <div className="ss-card border-[3px] flex flex-col h-full bg-white relative overflow-hidden group">
+      {/* Background Accent */}
+      <div className="absolute top-0 right-0 w-24 h-24 bg-neo-green/10 rounded-bl-[100px] pointer-events-none" />
+
+      <div className="p-5 flex-1 flex flex-col relative z-10">
+        
+        {/* Header */}
+        <div className="flex items-start gap-4 mb-5">
+          <Image
+            src={listing.user.avatar}
+            alt={listing.user.name || 'User avatar'}
+            width={48}
+            height={48}
+            className="w-12 h-12 rounded-md border-[2px] border-neo-ink bg-neo-cream shadow-[2px_2px_0_#111111]"
+          />
+          <div className="flex-1 min-w-0 pt-0.5">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <span className="text-base font-heading font-black text-neo-ink uppercase tracking-tight truncate">
+                {listing.user.name}
+              </span>
+              {listing.user.isVerified && (
+                <BadgeCheck size={16} strokeWidth={2.5} className="text-neo-purple shrink-0" />
+              )}
+            </div>
+            <p className="text-[11px] font-bold text-neo-ink/60 uppercase truncate">
+              {listing.user.year} • ★ {listing.user.rating}
+            </p>
+          </div>
+        </div>
+
+        {/* Swap Info */}
+        <div className="flex flex-col gap-2 mb-5">
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-bold text-neo-ink/50 uppercase w-12 text-right shrink-0">TEACHES</span>
+            <SkillTag skill={listing.skillOffered} color="purple" className="flex-1 text-center py-1.5 text-xs shadow-[2px_2px_0_#111111]" />
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-bold text-neo-ink/50 uppercase w-12 text-right shrink-0">WANTS</span>
+            <SkillTag skill={listing.skillWanted} color="yellow" className="flex-1 text-center py-1.5 text-xs shadow-[2px_2px_0_#111111]" />
+          </div>
+        </div>
+
+        {/* Description */}
+        <p className="text-sm font-medium text-neo-ink/80 leading-relaxed line-clamp-3 mb-6">
+          {listing.description}
+        </p>
+
+        {/* Badges / Tags */}
+        <div className="mt-auto">
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            {listing.user.rating >= 4.8 && (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-neo-ink bg-neo-yellow border-[2px] border-neo-ink px-2 py-1 rounded-sm uppercase">
+                <Trophy size={10} strokeWidth={3} /> Top Rated
+              </span>
+            )}
+            {listing.user.sessionsCompleted >= 5 && (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-neo-purple border-[2px] border-neo-ink px-2 py-1 rounded-sm uppercase">
+                <Zap size={10} strokeWidth={3} /> Active
+              </span>
             )}
           </div>
-          <p className="text-xs text-[var(--text-muted)] truncate">{listing.user.year}</p>
         </div>
-        <div className="flex items-center gap-1 text-xs text-accent-amber">
-          <span>⭐</span>
-          <span className="font-medium">{listing.user.rating}</span>
-        </div>
+
       </div>
 
-      {/* Badges */}
-      {(listing.user.rating >= 4.8 || listing.user.sessionsCompleted >= 5) && (
-        <div className="flex gap-2 mb-3">
-          {listing.user.rating >= 4.8 && (
-            <span className="flex items-center gap-1 text-[10px] font-bold text-accent-amber bg-accent-amber/10 border border-accent-amber/20 px-2 py-0.5 rounded-full">
-              <Trophy size={10} /> Top Teacher
-            </span>
-          )}
-          {listing.user.sessionsCompleted >= 5 && (
-            <span className="flex items-center gap-1 text-[10px] font-bold text-accent-violet bg-accent-violet/10 border border-accent-violet/20 px-2 py-0.5 rounded-full">
-              <Zap size={10} /> Active Swapper
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Skill swap */}
-      <div className="flex items-center gap-2 mb-3">
-        <SkillBadge skill={listing.skillOffered} variant="have" size="md" />
-        <ArrowRightLeft size={14} className="text-[var(--text-muted)] shrink-0" />
-        <SkillBadge skill={listing.skillWanted} variant="want" size="md" />
-      </div>
-
-      {/* Description */}
-      <p className="text-sm text-[var(--text-muted)] leading-relaxed mb-4 flex-1 line-clamp-3">
-        {listing.description}
-      </p>
-
-      {/* Tags */}
-      <div className="flex flex-wrap gap-1.5 mb-4">
-        {listing.tags.map((tag) => (
-          <span
-            key={tag}
-            className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-[var(--bg-surface-solid)] text-[var(--text-muted)]"
-          >
-            {tag}
+      {/* Footer / CTA */}
+      <div className="p-4 bg-neo-cream border-t-[3px] border-neo-ink flex items-center justify-between z-10">
+        <div className="flex flex-col gap-1">
+          <span className="flex items-center gap-1.5 text-xs font-bold text-neo-ink uppercase">
+            <Coins size={14} strokeWidth={2.5} className="text-neo-yellow" />
+            {listing.creditsPerHour} CREDIT / HR
           </span>
-        ))}
-      </div>
-
-      {/* Footer */}
-      <div className="flex items-center justify-between pt-3 border-t border-[var(--glass-border)]">
-        <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
-          <span className="flex items-center gap-1">
-            <Coins size={12} className="text-accent-amber" />
-            {listing.creditsPerHour}/hr
-          </span>
-          <span className="flex items-center gap-1">
-            <Clock size={12} />
+          <span className="flex items-center gap-1.5 text-[10px] font-bold text-neo-ink/60 uppercase">
+            <Clock size={12} strokeWidth={2.5} />
             {listing.availability}
           </span>
         </div>
-        <div className="relative z-10">
-          <GradientButton 
-            size="sm" 
-            onClick={(e: React.MouseEvent) => {
-              e.stopPropagation();
-              if (connectionStatus === 'accepted') {
-                router.push(`/dashboard/messages`);
-              } else {
-                handleConnect();
-              }
-            }} 
-            disabled={isConnecting || connectionStatus === 'pending'}
-            className="flex items-center gap-2"
-          >
-            {connectionStatus === 'accepted' ? (
-              <><MessageSquare size={14} /> Message</>
-            ) : connectionStatus === 'pending' ? (
-              <><Check size={14} /> Requested</>
-            ) : isConnecting ? (
-              <><Send size={14} className="animate-pulse" /> Sending...</>
-            ) : (
-              'Connect'
-            )}
-          </GradientButton>
-        </div>
+        
+        <Button 
+          variant={connectionStatus === 'accepted' ? 'success' : connectionStatus === 'pending' ? 'warning' : 'primary'}
+          size="sm"
+          disabled={isConnecting || connectionStatus === 'pending'}
+          onClick={(e: React.MouseEvent) => {
+            e.stopPropagation();
+            if (connectionStatus === 'accepted') {
+              router.push(`/dashboard/messages`);
+            } else {
+              handleConnect();
+            }
+          }}
+          className="text-[11px]"
+        >
+          {connectionStatus === 'accepted' ? (
+            <><MessageSquare size={14} strokeWidth={2.5} /> MESSAGE</>
+          ) : connectionStatus === 'pending' ? (
+            <><Check size={14} strokeWidth={3} /> REQUESTED</>
+          ) : isConnecting ? (
+            <><Send size={14} strokeWidth={2.5} className="animate-pulse" /> SENDING</>
+          ) : (
+            'REQUEST SWAP'
+          )}
+        </Button>
       </div>
-    </GlassCard>
+
+    </div>
   );
 }

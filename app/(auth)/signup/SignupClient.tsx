@@ -1,15 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useUser } from '@/hooks/useUser';
-import { GlassCard } from '@/components/shared/GlassCard';
-import { GradientButton } from '@/components/shared/GradientButton';
 import { APP_NAME, ROUTES } from '@/lib/constants';
-import { Eye, EyeOff, Mail, Lock, User, Loader2, Github, CheckCircle2, XCircle } from 'lucide-react';
+import { Eye, EyeOff, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { SkillExchangeBoard } from '@/components/landing/SkillExchangeBoard';
+
+const PASSWORD_RULES = [
+  { label: '6+ chars', test: (p: string) => p.length >= 6 },
+  { label: 'Lowercase', test: (p: string) => /[a-z]/.test(p) },
+  { label: 'Uppercase', test: (p: string) => /[A-Z]/.test(p) },
+  { label: 'Digit (0-9)', test: (p: string) => /[0-9]/.test(p) },
+  { label: 'Symbol (!@#)', test: (p: string) => /[^a-zA-Z0-9]/.test(p) },
+];
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -18,50 +23,14 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
-  const router = useRouter();
-  const { user: authUser, loading: authLoading } = useUser();
-  const hasCheckedAuth = useRef(false);
-
-  // ONE-TIME check: if already logged in when page mounts, go to dashboard.
-  // Does NOT re-fire when signUp() changes auth state — prevents race condition.
-  useEffect(() => {
-    if (authLoading || hasCheckedAuth.current) return;
-    hasCheckedAuth.current = true;
-    if (authUser) {
-      router.replace(ROUTES.dashboard);
-    }
-  }, [authLoading, authUser, router]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) {
-      toast.error('Please enter your email');
-      return;
-    }
-    if (!fullName) {
-      toast.error('Please enter your name');
-      return;
-    }
-    if (!password || password.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      return;
-    }
-    if (!/[a-z]/.test(password)) {
-      toast.error('Password must contain a lowercase letter');
-      return;
-    }
-    if (!/[A-Z]/.test(password)) {
-      toast.error('Password must contain an uppercase letter');
-      return;
-    }
-    if (!/[0-9]/.test(password)) {
-      toast.error('Password must contain a digit');
-      return;
-    }
-    if (!/[^a-zA-Z0-9]/.test(password)) {
-      toast.error('Password must contain a symbol (e.g. !@#$)');
-      return;
-    }
+    if (!fullName.trim()) { toast.error('Please enter your name'); return; }
+    if (!email) { toast.error('Please enter your email'); return; }
+
+    const failedRule = PASSWORD_RULES.find((rule) => !rule.test(password));
+    if (failedRule) { toast.error(`Password: ${failedRule.label}`); return; }
 
     setLoading(true);
     const supabase = createClient();
@@ -70,29 +39,27 @@ export default function SignupPage() {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { username: fullName } },
+        options: { data: { full_name: fullName.trim() } },
       });
 
       if (error) {
         toast.error(error.message);
+        setLoading(false);
       } else {
-        toast.success('Account created! Let\'s set up your profile.');
+        toast.success("Account created! Let's set up your profile.");
         window.location.href = ROUTES.onboarding;
-        return; // Don't reset loading — page is navigating away
       }
-    } catch (err) {
-      console.error('Signup error:', err);
-      toast.error('Something went wrong during signup. Please try again.');
-    } finally {
+    } catch {
+      toast.error('Something went wrong. Please try again.');
       setLoading(false);
     }
   };
 
-  const handleGitHubSignup = async () => {
+  const handleGoogleSignup = async () => {
     setOauthLoading(true);
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'github',
+      provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback?next=/onboarding` },
     });
     if (error) {
@@ -102,143 +69,166 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center px-4 py-12">
-      {/* Background effects */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-accent-coral/8 blur-[120px]" />
-        <div className="absolute bottom-1/3 left-1/4 w-[350px] h-[350px] rounded-full bg-accent-violet/6 blur-[100px]" />
+    <div className="min-h-screen flex flex-col md:flex-row bg-neo-cream font-body">
+      
+      {/* LEFT SIDE - Brand Panel (50%) */}
+      <div className="hidden md:flex md:w-1/2 bg-neo-yellow border-r-[4px] border-neo-ink p-12 flex-col justify-between">
+        
+        {/* Brand */}
+        <Link href={ROUTES.home} className="flex items-center gap-3 w-max group">
+          <div className="w-12 h-12 flex items-center justify-center bg-white border-[3px] border-neo-ink rounded-md shadow-[4px_4px_0_#111111] transition-transform group-hover:rotate-6">
+            <span className="text-neo-ink font-heading font-black text-2xl">S</span>
+          </div>
+          <span className="font-heading font-black text-3xl tracking-tighter uppercase text-neo-ink">
+            {APP_NAME}
+          </span>
+        </Link>
+
+        {/* Copy & Graphic */}
+        <div className="flex-grow flex flex-col justify-center max-w-[500px] w-full mx-auto mt-12">
+          <h1 className="font-heading font-black text-5xl lg:text-[5.5rem] leading-[0.85] text-white mb-6" style={{ WebkitTextStroke: '2px #111111' }}>
+            JOIN THE<br/>
+            SKILL<br/>
+            SWAP.
+          </h1>
+          <p className="font-heading font-bold text-neo-ink text-xl uppercase tracking-wide mb-10 border-l-[4px] border-neo-purple pl-4">
+            Teach what you know.<br/>
+            Learn what you love.
+          </p>
+          
+          <div className="w-full opacity-90 scale-95 origin-left">
+            <SkillExchangeBoard />
+          </div>
+        </div>
+
       </div>
 
-      <div className="relative z-10 w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <Link href={ROUTES.home} className="inline-flex items-center gap-2.5 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-amber via-accent-coral to-accent-violet flex items-center justify-center">
-              <span className="text-white font-heading font-bold text-lg">S</span>
-            </div>
-            <span className="font-heading font-bold text-xl text-[var(--text-primary)]">{APP_NAME}</span>
-          </Link>
-          <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mb-2">
-            Join SkillSwap
-          </h1>
-          <p className="text-sm text-[var(--text-muted)]">
-            Create your account and start swapping skills today
-          </p>
-        </div>
+      {/* RIGHT SIDE - Signup Form (50%) */}
+      <div className="w-full md:w-1/2 flex flex-col justify-center p-6 sm:p-12 lg:p-24 overflow-y-auto max-h-screen">
+        <div className="w-full max-w-md mx-auto py-8">
+          
+          <div className="mb-10 md:hidden">
+            <h2 className="font-heading font-black text-4xl text-neo-ink uppercase leading-none">
+              JOIN THE<br/>SKILL SWAP.
+            </h2>
+          </div>
 
-        {/* GitHub OAuth */}
-        <button
-          onClick={handleGitHubSignup}
-          disabled={oauthLoading}
-          className="w-full flex items-center justify-center gap-3 px-4 py-3 mb-4 rounded-xl bg-[#24292f] hover:bg-[#2f363d] text-white text-sm font-medium transition-all disabled:opacity-60"
-        >
-          {oauthLoading ? <Loader2 size={18} className="animate-spin" /> : <Github size={18} />}
-          Continue with GitHub
-        </button>
+          <div className="hidden md:block mb-10">
+            <h2 className="font-heading font-black text-3xl text-neo-ink uppercase leading-none">
+              CREATE YOUR ACCOUNT
+            </h2>
+          </div>
 
-        {/* Divider */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="flex-1 h-px bg-[var(--glass-border)]" />
-          <span className="text-xs text-[var(--text-muted)] font-medium">or sign up with email</span>
-          <div className="flex-1 h-px bg-[var(--glass-border)]" />
-        </div>
-
-        <GlassCard padding="lg" className="mb-6">
-          <form className="space-y-5" onSubmit={handleSignup}>
-            {/* Name */}
-            <div>
-              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1.5">
-                Full Name
-              </label>
-              <div className="relative">
-                <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+          <div className="bg-white border-[4px] border-neo-ink rounded-md p-8 shadow-[8px_8px_0_#111111]">
+            <form onSubmit={handleSignup} className="space-y-5">
+              
+              <div>
+                <label className="block font-heading font-bold text-neo-ink uppercase text-sm tracking-widest mb-2">
+                  Full Name
+                </label>
                 <input
                   type="text"
-                  placeholder="Arjun Raghavan"
+                  placeholder="Jane Doe"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-[var(--bg-surface-solid)] border border-[var(--glass-border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] text-sm focus:outline-none focus:border-accent-violet/50 focus:ring-1 focus:ring-accent-violet/30 transition-all"
+                  className="w-full h-[56px] px-4 bg-white border-[3px] border-neo-ink rounded-md text-neo-ink font-medium focus:outline-none focus:ring-0 focus:border-neo-green focus:shadow-[4px_4px_0_#B7F34A] transition-all"
                 />
               </div>
-            </div>
 
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1.5">
-                College Email
-              </label>
-              <div className="relative">
-                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+              <div>
+                <label className="block font-heading font-bold text-neo-ink uppercase text-sm tracking-widest mb-2">
+                  Email
+                </label>
                 <input
                   type="email"
-                  placeholder="you@college.edu"
+                  placeholder="jane@college.edu"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-[var(--bg-surface-solid)] border border-[var(--glass-border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] text-sm focus:outline-none focus:border-accent-violet/50 focus:ring-1 focus:ring-accent-violet/30 transition-all"
+                  className="w-full h-[56px] px-4 bg-white border-[3px] border-neo-ink rounded-md text-neo-ink font-medium focus:outline-none focus:ring-0 focus:border-neo-green focus:shadow-[4px_4px_0_#B7F34A] transition-all"
                 />
               </div>
-            </div>
 
-            {/* Password */}
-            <div>
-              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1.5">
-                Password
-              </label>
-              <div className="relative">
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Min 6 chars · A-z, 0-9, symbol"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-11 py-3 rounded-xl bg-[var(--bg-surface-solid)] border border-[var(--glass-border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] text-sm focus:outline-none focus:border-accent-violet/50 focus:ring-1 focus:ring-accent-violet/30 transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-                  aria-label="Toggle password visibility"
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-              {/* Live password requirements */}
-              {password.length > 0 && (
-                <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
-                  {[
-                    { label: '6+ characters', ok: password.length >= 6 },
-                    { label: 'Lowercase (a-z)', ok: /[a-z]/.test(password) },
-                    { label: 'Uppercase (A-Z)', ok: /[A-Z]/.test(password) },
-                    { label: 'Digit (0-9)', ok: /[0-9]/.test(password) },
-                    { label: 'Symbol (!@#$)', ok: /[^a-zA-Z0-9]/.test(password) },
-                  ].map((rule) => (
-                    <span key={rule.label} className={`flex items-center gap-1 text-[11px] font-medium ${rule.ok ? 'text-accent-emerald' : 'text-[var(--text-muted)]'}`}>
-                      {rule.ok ? <CheckCircle2 size={12} /> : <XCircle size={12} className="opacity-40" />}
-                      {rule.label}
-                    </span>
-                  ))}
+              <div>
+                <label className="block font-heading font-bold text-neo-ink uppercase text-sm tracking-widest mb-2">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full h-[56px] px-4 pr-12 bg-white border-[3px] border-neo-ink rounded-md text-neo-ink font-medium focus:outline-none focus:ring-0 focus:border-neo-green focus:shadow-[4px_4px_0_#B7F34A] transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-neo-ink p-1 hover:text-neo-green"
+                  >
+                    {showPassword ? <EyeOff size={24} strokeWidth={2.5} /> : <Eye size={24} strokeWidth={2.5} />}
+                  </button>
                 </div>
-              )}
+                
+                {/* Live password strength indicator */}
+                {password.length > 0 && (
+                  <div className="mt-4 grid grid-cols-2 gap-x-2 gap-y-2">
+                    {PASSWORD_RULES.map((rule) => {
+                      const ok = rule.test(password);
+                      return (
+                        <span key={rule.label} className={`flex items-center gap-2 text-[11px] sm:text-xs font-heading font-bold tracking-wider uppercase ${ok ? 'text-neo-purple' : 'text-neo-ink/40'}`}>
+                          {ok ? <CheckCircle2 size={16} strokeWidth={3} /> : <XCircle size={16} strokeWidth={3} />}
+                          {rule.label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="w-full h-[56px] bg-neo-purple border-[3px] border-neo-ink rounded-md font-heading font-black text-xl text-white uppercase tracking-widest shadow-[4px_4px_0_#111111] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-[2px_2px_0_#111111] active:translate-y-[4px] active:translate-x-[4px] active:shadow-none transition-all flex items-center justify-center mt-4 disabled:opacity-70 disabled:pointer-events-none"
+              >
+                {loading ? <Loader2 className="animate-spin" size={24} /> : 'CREATE ACCOUNT'}
+              </button>
+            </form>
+
+            <div className="flex items-center gap-4 my-8">
+              <div className="flex-1 h-[3px] bg-neo-ink opacity-20" />
+              <span className="font-heading font-black text-neo-ink uppercase text-sm opacity-50">OR</span>
+              <div className="flex-1 h-[3px] bg-neo-ink opacity-20" />
             </div>
 
-            {/* Submit */}
-            <GradientButton className="w-full" size="lg" type="submit" disabled={loading}>
-              {loading ? (
-                <><Loader2 size={16} className="animate-spin" /> Creating account...</>
+            <button
+              onClick={handleGoogleSignup}
+              disabled={oauthLoading}
+              className="w-full h-[56px] bg-white border-[3px] border-neo-ink rounded-md font-heading font-bold text-neo-ink uppercase tracking-wide shadow-[4px_4px_0_#111111] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-[2px_2px_0_#111111] active:translate-y-[4px] active:translate-x-[4px] active:shadow-none transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:pointer-events-none"
+            >
+              {oauthLoading ? (
+                <Loader2 size={24} className="animate-spin" />
               ) : (
-                'Create Account'
+                <svg width="24" height="24" viewBox="0 0 24 24">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                </svg>
               )}
-            </GradientButton>
-          </form>
-        </GlassCard>
+              Continue with Google
+            </button>
+          </div>
 
-        {/* Login link */}
-        <p className="text-center text-sm text-[var(--text-muted)]">
-          Already have an account?{' '}
-          <Link href={ROUTES.login} className="text-accent-violet font-medium hover:underline">
-            Log in
-          </Link>
-        </p>
+          <div className="mt-10 text-center">
+            <p className="font-heading font-bold text-neo-ink uppercase tracking-wide text-sm">
+              ALREADY HAVE AN ACCOUNT?{' '}
+              <Link href={ROUTES.login} className="text-neo-purple hover:text-neo-green underline underline-offset-4 decoration-[2px] transition-colors">
+                LOG IN &rarr;
+              </Link>
+            </p>
+          </div>
+
+        </div>
       </div>
     </div>
   );

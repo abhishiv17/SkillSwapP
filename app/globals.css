@@ -4,14 +4,14 @@
 
 @layer base {
   :root {
-    /* Light Mode: Botanical & Stone */
-    --bg-base: #f8f6f0;
-    --bg-surface: #f0eee9;
-    --bg-surface-solid: #e8e5de;
-    --bg-cream: #f5f3ed;
-    --bg-sage: #edf2f0;
-    --bg-sand: #f5f2eb;
-    --bg-rose: #f7f2f1;
+    /* Light Mode: Neo-Brutal */
+    --bg-base: #FFF9E9;
+    --bg-surface: #F4E8CD;
+    --bg-surface-solid: #EADCB9;
+    --bg-cream: #FFF9E9;
+    --bg-sage: #F4E8CD;
+    --bg-sand: #EADCB9;
+    --bg-rose: #FFF9E9;
 
     /* Text */
     --text-primary: #1a1f1c;
@@ -19,10 +19,10 @@
     --text-muted: #8b9690;
 
     /* Borders */
-    --border-soft: rgba(26, 31, 28, 0.08);
-    --border-hover: rgba(26, 31, 28, 0.15);
-    --glass-border: rgba(26, 31, 28, 0.10);
-    --glass-bg: rgba(240, 238, 233, 0.5);
+    --border-soft: rgba(17, 17, 17, 0.15);
+    --border-hover: rgba(17, 17, 17, 0.3);
+    --glass-border: rgba(17, 17, 17, 0.15);
+    --glass-bg: rgba(255, 249, 233, 0.7);
 
     /* Accents - Organic Midtones */
     --accent-matcha: #7ea182;
@@ -59,57 +59,7 @@
     --ring: 128 17% 56%;
   }
 
-  .dark {
-    /* Dark Mode: Midnight Slate */
-    --bg-base: #121413;
-    --bg-surface: #1a1f1c;
-    --bg-surface-solid: #222826;
-    --bg-cream: #181c1a;
-    --bg-sage: #151a17;
-    --bg-sand: #181714;
-    --bg-rose: #1c1818;
 
-    /* Text */
-    --text-primary: #e8e6e1;
-    --text-secondary: #9fa8a1;
-    --text-muted: #747d77;
-
-    /* Borders */
-    --border-soft: rgba(232, 230, 225, 0.08);
-    --border-hover: rgba(232, 230, 225, 0.15);
-    --glass-border: rgba(232, 230, 225, 0.10);
-    --glass-bg: rgba(26, 31, 28, 0.5);
-
-    /* Accents - slightly brightened for dark mode contrast */
-    --accent-matcha: #8ab08e;
-    --accent-mustard: #e6b855;
-    --accent-slate: #7c98b5;
-    --accent-rose: #c98989;
-    --accent-clay: #b88a72;
-
-    --gradient-primary: linear-gradient(135deg, #8ab08e 0%, #7c98b5 100%);
-
-    /* shadcn compat */
-    --background: 150 5% 8%;
-    --foreground: 45 15% 90%;
-    --card: 150 9% 11%;
-    --card-foreground: 45 15% 90%;
-    --popover: 150 9% 11%;
-    --popover-foreground: 45 15% 90%;
-    --primary: 128 20% 62%;
-    --primary-foreground: 150 5% 8%;
-    --secondary: 150 9% 11%;
-    --secondary-foreground: 45 15% 90%;
-    --muted: 150 9% 11%;
-    --muted-foreground: 150 5% 55%;
-    --accent: 150 9% 11%;
-    --accent-foreground: 45 15% 90%;
-    --destructive: 0 40% 50%;
-    --destructive-foreground: 45 15% 90%;
-    --border: 150 5% 20%;
-    --input: 150 5% 20%;
-    --ring: 128 20% 62%;
-  }
 }
 
 @layer base {
@@ -118,6 +68,7 @@
   }
   html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
   }
   body {
     font-family: var(--font-dm-sans), system-ui, sans-serif;
@@ -126,14 +77,17 @@
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    transition: background-color 0.3s ease, color 0.3s ease;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-sora), system-ui, sans-serif;
+    font-family: var(--font-space), system-ui, sans-serif;
   }
   ::selection {
     background: hsla(128, 17%, 56%, 0.25);
     color: inherit;
+  }
+  img, svg {
+    max-width: 100%;
+    height: auto;
   }
 }
 
@@ -218,10 +172,23 @@
   }
 
   .hover-lift {
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
   }
   .hover-lift:hover {
-    transform: translateY(-2px);
+    transform: translate(-3px, -3px);
+  }
+
+  .neo-hover-lift {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .neo-hover-lift:hover {
+    transform: translate(-3px, -3px);
+    box-shadow: 6px 6px 0 #111111;
+  }
+  
+  .neo-active-press:active {
+    transform: translate(4px, 4px) !important;
+    box-shadow: 0 0 0 #111111 !important;
   }
 
   /* Page transition */

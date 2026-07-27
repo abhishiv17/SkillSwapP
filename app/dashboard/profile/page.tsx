@@ -4,9 +4,8 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/hooks/useUser';
-import { GlassCard } from '@/components/shared/GlassCard';
-import { GradientButton } from '@/components/shared/GradientButton';
-import { SkillBadge } from '@/components/shared/SkillBadge';
+import { Button } from '@/components/dashboard/ui/Button';
+import { PageHeader } from '@/components/dashboard/ui/PageHeader';
 import {
   Coins, Star, Calendar, Loader2, Save, User, GraduationCap,
   MapPin, Globe, Phone, Github, Linkedin, Languages, Monitor,
@@ -14,7 +13,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { ALL_SKILLS } from '@/lib/constants';
+import { ALL_SKILLS, ROUTES } from '@/lib/constants';
 import { authFetch } from '@/lib/authFetch';
 import { BadgesSection } from '@/components/dashboard/BadgesSection';
 
@@ -24,22 +23,21 @@ const SESSION_MODES = ['Online', 'In-person', 'Both'];
 const LANGUAGE_OPTIONS = ['English', 'Hindi', 'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'Bengali', 'Marathi', 'Gujarati', 'Punjabi', 'Urdu', 'Odia', 'Assamese', 'French', 'German', 'Spanish', 'Japanese', 'Korean', 'Mandarin'];
 const YEAR_OPTIONS = [1, 2, 3, 4, 5];
 
-// Defined outside ProfilePage to prevent focus loss on re-renders
 function FormInput({ label, icon: Icon, value, onChange, placeholder, type = 'text' }: {
   label: string; icon: React.ElementType; value: string;
   onChange: (v: string) => void; placeholder: string; type?: string;
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5 uppercase tracking-wider">{label}</label>
+      <label className="block text-[11px] font-heading font-black text-neo-ink mb-2 uppercase tracking-widest">{label}</label>
       <div className="relative">
-        <Icon size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+        <Icon size={18} strokeWidth={2.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-neo-ink" />
         <input
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--bg-surface-solid)] border border-[var(--glass-border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] text-sm focus:outline-none focus:border-accent-violet/50 focus:ring-1 focus:ring-accent-violet/30 transition-all"
+          placeholder={placeholder.toUpperCase()}
+          className="w-full pl-10 pr-4 h-12 bg-white border-[3px] border-neo-ink text-sm font-bold text-neo-ink placeholder:text-neo-ink/30 focus:outline-none focus:ring-0 focus:border-neo-purple focus:shadow-[3px_3px_0_var(--ss-purple)] transition-all uppercase"
         />
       </div>
     </div>
@@ -52,20 +50,20 @@ function FormSelect({ label, icon: Icon, value, onChange, options, placeholder }
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5 uppercase tracking-wider">{label}</label>
+      <label className="block text-[11px] font-heading font-black text-neo-ink mb-2 uppercase tracking-widest">{label}</label>
       <div className="relative">
-        <Icon size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+        <Icon size={18} strokeWidth={2.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-neo-ink" />
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-[var(--bg-surface-solid)] border border-[var(--glass-border)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-accent-violet/50 focus:ring-1 focus:ring-accent-violet/30 transition-all appearance-none cursor-pointer"
+          className="w-full pl-10 pr-10 h-12 bg-white border-[3px] border-neo-ink text-sm font-bold text-neo-ink focus:outline-none focus:ring-0 focus:border-neo-purple focus:shadow-[3px_3px_0_var(--ss-purple)] transition-all appearance-none cursor-pointer uppercase"
         >
-          <option value="">{placeholder}</option>
+          <option value="">{placeholder.toUpperCase()}</option>
           {options.map((opt) => (
-            <option key={opt} value={opt}>{opt}</option>
+            <option key={opt} value={opt}>{opt.toUpperCase()}</option>
           ))}
         </select>
-        <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none" />
+        <ChevronDown size={18} strokeWidth={3} className="absolute right-3 top-1/2 -translate-y-1/2 text-neo-ink pointer-events-none" />
       </div>
     </div>
   );
@@ -225,104 +223,103 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
-        <Loader2 size={24} className="animate-spin text-accent-violet" />
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <Loader2 size={32} className="animate-spin text-neo-purple" />
+        <span className="font-heading font-black uppercase tracking-widest text-neo-ink">Loading Profile...</span>
       </div>
     );
   }
 
   const offeredSkills = skills.filter((s) => s.type === 'offered');
   const desiredSkills = skills.filter((s) => s.type === 'desired');
-  const avatarUrl = `https://api.dicebear.com/9.x/avataaars/svg?seed=${profile?.username || 'User'}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+  const avatarUrl = `https://api.dicebear.com/9.x/bottts/svg?seed=${profile?.username || 'User'}&backgroundColor=FFF9E9`;
 
   return (
-    <div className="space-y-6 max-w-3xl">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mb-1">Profile Settings</h1>
-          <p className="text-sm text-[var(--text-muted)]">Manage your skill exchange profile</p>
-        </div>
-      </div>
+    <div className="max-w-[800px] mx-auto space-y-8 animate-page-in">
+      <PageHeader 
+        title="Profile Settings"
+        subtitle="Manage your skill exchange profile"
+      />
 
       {/* Profile header card */}
-      <GlassCard gradient padding="lg">
-        <div className="flex items-start gap-5">
-          <Image src={avatarUrl} alt={profile?.username || 'User'} width={80} height={80} className="w-20 h-20 rounded-2xl bg-[var(--bg-surface-solid)]" />
+      <div className="ss-card border-[4px] p-6 bg-neo-yellow shadow-[6px_6px_0_#111111]">
+        <div className="flex items-start gap-6">
+          <Image src={avatarUrl} alt={profile?.username || 'User'} width={96} height={96} className="w-24 h-24 border-[3px] border-neo-ink bg-white shadow-[4px_4px_0_#111111]" />
           <div className="flex-1">
-            <h2 className="font-heading text-xl font-bold text-[var(--text-primary)] mb-0.5">
+            <h2 className="font-heading font-black text-3xl uppercase tracking-tight text-neo-ink leading-none mb-2">
               {fullName || profile?.username || 'Unknown'}
             </h2>
-            <p className="text-sm text-[var(--text-muted)] mb-1">@{profile?.username}</p>
+            <p className="text-sm font-bold uppercase tracking-widest text-neo-ink/70 mb-2">@{profile?.username}</p>
             {(collegeName || degree) && (
-              <p className="text-sm text-[var(--text-secondary)]">
-                {degree && `${degree} `}{branch && `in ${branch} `}{collegeName && `• ${collegeName}`}
+              <p className="text-xs font-bold uppercase tracking-widest text-neo-ink/90">
+                {degree && `${degree} `}{branch && `IN ${branch} `}{collegeName && `• ${collegeName}`}
               </p>
             )}
 
-            <div className="flex items-center gap-4 mt-3 text-sm text-[var(--text-muted)] flex-wrap">
-              <span className="flex items-center gap-1"><Users size={14} className="text-accent-violet" />{connectionsCount} Connections</span>
-              <span className="flex items-center gap-1"><Coins size={14} className="text-accent-amber" />{profile?.credits ?? 0} credits</span>
-              <span className="flex items-center gap-1"><Star size={14} className="text-accent-amber fill-accent-amber" />{profile?.average_rating?.toFixed(1) ?? '0.0'}</span>
-              <span className="flex items-center gap-1"><Calendar size={14} />Joined {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}</span>
+            <div className="flex items-center gap-4 mt-4 flex-wrap">
+              <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border-[2px] border-neo-ink text-[10px] font-bold uppercase tracking-widest text-neo-ink shadow-[2px_2px_0_#111111]"><Users size={14} strokeWidth={3} className="text-neo-purple" />{connectionsCount} CONNECTIONS</span>
+              <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border-[2px] border-neo-ink text-[10px] font-bold uppercase tracking-widest text-neo-ink shadow-[2px_2px_0_#111111]"><Coins size={14} strokeWidth={3} className="text-neo-yellow" />{profile?.credits ?? 0} CREDITS</span>
+              <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border-[2px] border-neo-ink text-[10px] font-bold uppercase tracking-widest text-neo-ink shadow-[2px_2px_0_#111111]"><Star size={14} strokeWidth={3} className="text-neo-green fill-neo-green" />{profile?.average_rating?.toFixed(1) ?? '0.0'}</span>
             </div>
           </div>
 
           {/* Completion indicator */}
-          <div className="text-center shrink-0">
-            <div className="relative w-14 h-14">
-              <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
-                <circle cx="28" cy="28" r="24" fill="none" stroke="var(--bg-surface-solid)" strokeWidth="4" />
+          <div className="text-center shrink-0 bg-white border-[3px] border-neo-ink p-3 shadow-[4px_4px_0_#111111]">
+            <div className="relative w-16 h-16">
+              <svg className="w-16 h-16 -rotate-90" viewBox="0 0 56 56">
+                <circle cx="28" cy="28" r="24" fill="none" stroke="#FFFDF5" strokeWidth="6" className="border-neo-ink" />
                 <circle
                   cx="28" cy="28" r="24" fill="none"
-                  stroke={completionPercent >= 70 ? '#10b981' : completionPercent >= 40 ? '#f59e0b' : '#ef4444'}
-                  strokeWidth="4"
+                  stroke={completionPercent >= 70 ? 'var(--ss-green)' : completionPercent >= 40 ? 'var(--ss-yellow)' : 'var(--ss-coral)'}
+                  strokeWidth="6"
                   strokeDasharray={`${(completionPercent / 100) * 150.8} 150.8`}
-                  strokeLinecap="round"
+                  strokeLinecap="square"
                 />
               </svg>
-              <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-[var(--text-primary)]">
+              <span className="absolute inset-0 flex items-center justify-center text-sm font-heading font-black text-neo-ink">
                 {completionPercent}%
               </span>
             </div>
-            <p className="text-[10px] text-[var(--text-muted)] mt-1">Complete</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-neo-ink mt-2">COMPLETE</p>
           </div>
         </div>
-      </GlassCard>
+      </div>
 
       {/* Badges & Milestones */}
       <BadgesSection />
 
       {/* Personal Info */}
-      <GlassCard padding="lg">
-        <h3 className="font-heading font-semibold text-sm uppercase tracking-wider text-accent-violet mb-5 flex items-center gap-2">
-          <User size={15} /> Personal Info
+      <div className="ss-card border-[3px] p-6 bg-white shadow-[6px_6px_0_#111111]">
+        <h3 className="font-heading font-black text-xl uppercase tracking-tight text-neo-ink mb-6 flex items-center gap-3 border-b-[3px] border-neo-ink pb-4">
+          <span className="w-8 h-8 flex items-center justify-center bg-neo-purple border-[2px] border-neo-ink shadow-[2px_2px_0_#111111]"><User size={16} strokeWidth={3} className="text-white" /></span>
+          Personal Info
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <FormInput label="Full Name" icon={User} value={fullName} onChange={setFullName} placeholder="Arjun Raghavan" />
           <FormInput label="Phone" icon={Phone} value={phoneNum} onChange={setPhoneNum} placeholder="+91 98765 43210" type="tel" />
           <FormSelect label="Gender" icon={User} value={gender} onChange={setGender} options={GENDER_OPTIONS} placeholder="Select gender" />
           <FormInput label="Age" icon={Calendar} value={age} onChange={setAge} placeholder="20" type="number" />
           <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5 uppercase tracking-wider">Bio</label>
+            <label className="block text-[11px] font-heading font-black text-neo-ink mb-2 uppercase tracking-widest">Bio</label>
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              placeholder="MERN developer, chess nerd, love teaching..."
+              placeholder="MERN DEVELOPER, CHESS NERD, LOVE TEACHING..."
               maxLength={300}
-              className="w-full px-4 py-2.5 rounded-xl bg-[var(--bg-surface-solid)] border border-[var(--glass-border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] text-sm focus:outline-none focus:border-accent-violet/50 focus:ring-1 focus:ring-accent-violet/30 transition-all resize-none h-20"
+              className="w-full px-4 py-3 bg-white border-[3px] border-neo-ink text-sm font-bold text-neo-ink placeholder:text-neo-ink/30 focus:outline-none focus:ring-0 focus:border-neo-purple focus:shadow-[3px_3px_0_var(--ss-purple)] transition-all resize-none h-24 uppercase"
             />
-            <p className="text-xs text-[var(--text-muted)] mt-1 text-right">{bio.length}/300</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-neo-ink/50 mt-2 text-right">{bio.length}/300</p>
           </div>
         </div>
-      </GlassCard>
+      </div>
 
       {/* Academic Info */}
-      <GlassCard padding="lg">
-        <h3 className="font-heading font-semibold text-sm uppercase tracking-wider text-accent-emerald mb-5 flex items-center gap-2">
-          <GraduationCap size={15} /> Academic Info
+      <div className="ss-card border-[3px] p-6 bg-white shadow-[6px_6px_0_#111111]">
+        <h3 className="font-heading font-black text-xl uppercase tracking-tight text-neo-ink mb-6 flex items-center gap-3 border-b-[3px] border-neo-ink pb-4">
+          <span className="w-8 h-8 flex items-center justify-center bg-neo-green border-[2px] border-neo-ink shadow-[2px_2px_0_#111111]"><GraduationCap size={16} strokeWidth={3} className="text-neo-ink" /></span>
+          Academic Info
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <FormInput label="College Name" icon={GraduationCap} value={collegeName} onChange={setCollegeName} placeholder="IIT Bombay" />
           <FormSelect label="Degree" icon={GraduationCap} value={degree} onChange={setDegree} options={DEGREE_OPTIONS} placeholder="Select degree" />
           <FormInput label="Branch / Major" icon={GraduationCap} value={branch} onChange={setBranch} placeholder="Computer Science" />
@@ -330,38 +327,40 @@ export default function ProfilePage() {
           <FormInput label="Graduation Year" icon={Calendar} value={gradYear} onChange={setGradYear} placeholder="2027" type="number" />
           <FormInput label="City / Campus" icon={MapPin} value={city} onChange={setCity} placeholder="Mumbai" />
         </div>
-      </GlassCard>
+      </div>
 
       {/* Social Links */}
-      <GlassCard padding="lg">
-        <h3 className="font-heading font-semibold text-sm uppercase tracking-wider text-accent-amber mb-5 flex items-center gap-2">
-          <Globe size={15} /> Social Links
+      <div className="ss-card border-[3px] p-6 bg-white shadow-[6px_6px_0_#111111]">
+        <h3 className="font-heading font-black text-xl uppercase tracking-tight text-neo-ink mb-6 flex items-center gap-3 border-b-[3px] border-neo-ink pb-4">
+          <span className="w-8 h-8 flex items-center justify-center bg-neo-blue border-[2px] border-neo-ink shadow-[2px_2px_0_#111111]"><Globe size={16} strokeWidth={3} className="text-neo-ink" /></span>
+          Social Links
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FormInput label="GitHub" icon={Github} value={githubUrl} onChange={setGithubUrl} placeholder="https://github.com/username" type="url" />
-          <FormInput label="LinkedIn" icon={Linkedin} value={linkedinUrl} onChange={setLinkedinUrl} placeholder="https://linkedin.com/in/username" type="url" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <FormInput label="GitHub" icon={Github} value={githubUrl} onChange={setGithubUrl} placeholder="HTTPS://GITHUB.COM/USERNAME" type="url" />
+          <FormInput label="LinkedIn" icon={Linkedin} value={linkedinUrl} onChange={setLinkedinUrl} placeholder="HTTPS://LINKEDIN.COM/IN/USERNAME" type="url" />
         </div>
-      </GlassCard>
+      </div>
 
       {/* Preferences */}
-      <GlassCard padding="lg">
-        <h3 className="font-heading font-semibold text-sm uppercase tracking-wider text-accent-coral mb-5 flex items-center gap-2">
-          <Monitor size={15} /> Preferences
+      <div className="ss-card border-[3px] p-6 bg-white shadow-[6px_6px_0_#111111]">
+        <h3 className="font-heading font-black text-xl uppercase tracking-tight text-neo-ink mb-6 flex items-center gap-3 border-b-[3px] border-neo-ink pb-4">
+          <span className="w-8 h-8 flex items-center justify-center bg-neo-coral border-[2px] border-neo-ink shadow-[2px_2px_0_#111111]"><Monitor size={16} strokeWidth={3} className="text-white" /></span>
+          Preferences
         </h3>
-        <div className="space-y-5">
+        <div className="space-y-6">
           {/* Session mode */}
           <div>
-            <label className="block text-xs font-medium text-[var(--text-muted)] mb-2 uppercase tracking-wider">Preferred Session Mode</label>
-            <div className="flex gap-2">
+            <label className="block text-[11px] font-heading font-black text-neo-ink mb-3 uppercase tracking-widest">Preferred Session Mode</label>
+            <div className="flex flex-wrap gap-3">
               {SESSION_MODES.map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setPreferredMode(mode)}
                   className={cn(
-                    'px-4 py-2 rounded-xl text-sm font-medium transition-all border',
+                    'px-6 py-3 text-sm font-heading font-black uppercase tracking-widest transition-all border-[3px]',
                     preferredMode === mode
-                      ? 'bg-accent-violet/10 border-accent-violet/30 text-accent-violet'
-                      : 'bg-[var(--bg-surface-solid)] border-[var(--glass-border)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                      ? 'bg-neo-purple text-white border-neo-ink shadow-[4px_4px_0_#111111] translate-x-[-2px] translate-y-[-2px]'
+                      : 'bg-white text-neo-ink border-neo-ink hover:bg-neo-yellow/50 hover:shadow-[2px_2px_0_#111111]'
                   )}
                 >
                   {mode}
@@ -372,30 +371,30 @@ export default function ProfilePage() {
 
           {/* Languages */}
           <div>
-            <label className="block text-xs font-medium text-[var(--text-muted)] mb-2 uppercase tracking-wider">Languages</label>
-            <div className="flex flex-wrap gap-2 mb-3">
+            <label className="block text-[11px] font-heading font-black text-neo-ink mb-3 uppercase tracking-widest">Languages</label>
+            <div className="flex flex-wrap gap-2 mb-4">
               {languages.map((lang) => (
                 <span
                   key={lang}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-accent-amber/10 border border-accent-amber/20 text-sm text-accent-amber font-medium"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-neo-yellow border-[2px] border-neo-ink text-[11px] font-heading font-black uppercase tracking-widest text-neo-ink shadow-[2px_2px_0_#111111]"
                 >
                   {lang}
-                  <button onClick={() => removeLanguage(lang)} className="hover:text-red-400 transition-colors">
-                    <X size={12} />
+                  <button onClick={() => removeLanguage(lang)} className="hover:bg-neo-coral hover:text-white p-0.5 border-[2px] border-transparent hover:border-neo-ink transition-colors">
+                    <X size={14} strokeWidth={3} />
                   </button>
                 </span>
               ))}
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <div className="relative flex-1">
-                <Languages size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+                <Languages size={18} strokeWidth={2.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-neo-ink" />
                 <input
                   list="language-options"
                   value={langInput}
                   onChange={(e) => setLangInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addLanguage(langInput.trim()); } }}
-                  placeholder="Add a language..."
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--bg-surface-solid)] border border-dashed border-[var(--glass-border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] text-sm focus:outline-none focus:border-accent-violet/50 focus:border-solid transition-all"
+                  placeholder="ADD A LANGUAGE..."
+                  className="w-full pl-10 pr-4 h-12 bg-white border-[3px] border-neo-ink text-sm font-bold text-neo-ink placeholder:text-neo-ink/30 focus:outline-none focus:ring-0 focus:border-neo-purple focus:shadow-[3px_3px_0_var(--ss-purple)] transition-all uppercase"
                 />
                 <datalist id="language-options">
                   {LANGUAGE_OPTIONS.filter((l) => !languages.includes(l)).map((l) => (
@@ -407,40 +406,45 @@ export default function ProfilePage() {
                 onClick={() => addLanguage(langInput.trim())}
                 disabled={!langInput.trim()}
                 className={cn(
-                  'px-3 py-2.5 rounded-xl text-sm border transition-all',
+                  'w-12 h-12 flex items-center justify-center border-[3px] transition-all',
                   langInput.trim()
-                    ? 'bg-accent-amber/10 border-accent-amber/30 text-accent-amber hover:bg-accent-amber/20'
-                    : 'bg-[var(--bg-surface-solid)] border-[var(--glass-border)] text-[var(--text-muted)] cursor-not-allowed'
+                    ? 'bg-white border-neo-ink text-neo-ink hover:bg-neo-yellow shadow-[2px_2px_0_#111111] hover:shadow-[4px_4px_0_#111111] hover:-translate-y-0.5 hover:-translate-x-0.5 cursor-pointer'
+                    : 'bg-neo-surface border-neo-ink/20 text-neo-ink/30 cursor-not-allowed'
                 )}
               >
-                <Plus size={16} />
+                <Plus size={20} strokeWidth={3} />
               </button>
             </div>
           </div>
         </div>
-      </GlassCard>
+      </div>
 
       {/* Skills — Editable */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <GlassCard padding="lg">
-          <h3 className="font-heading font-semibold text-sm uppercase tracking-wider text-accent-emerald mb-4">Skills I Teach</h3>
-          <div className="flex flex-wrap gap-2 mb-4">
+        <div className="ss-card border-[3px] p-6 bg-white shadow-[6px_6px_0_#111111] flex flex-col h-full">
+          <h3 className="font-heading font-black text-xl uppercase tracking-tight text-neo-ink mb-6 flex items-center gap-3 border-b-[3px] border-neo-ink pb-4">
+            <span className="w-8 h-8 flex items-center justify-center bg-neo-yellow border-[2px] border-neo-ink shadow-[2px_2px_0_#111111]"><Star size={16} strokeWidth={3} className="text-neo-ink" /></span>
+            Skills I Teach
+          </h3>
+          <div className="flex flex-wrap gap-2 mb-6">
             {offeredSkills.length > 0 ? (
               offeredSkills.map((s) => (
-                <SkillBadge 
-                  key={s.id} 
-                  skill={s.skill_name} 
-                  variant="have" 
-                  size="md" 
-                  onRemove={() => handleRemoveSkill(s.id, s.skill_name)} 
-                />
+                <span
+                  key={s.id}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-neo-yellow border-[2px] border-neo-ink text-[11px] font-heading font-black uppercase tracking-widest text-neo-ink shadow-[2px_2px_0_#111111]"
+                >
+                  {s.skill_name}
+                  <button onClick={() => handleRemoveSkill(s.id, s.skill_name)} className="hover:bg-neo-coral hover:text-white p-0.5 border-[2px] border-transparent hover:border-neo-ink transition-colors">
+                    <X size={14} strokeWidth={3} />
+                  </button>
+                </span>
               ))
             ) : (
-              <p className="text-sm text-[var(--text-muted)] w-full">No skills added yet.</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-neo-ink/50 w-full">NO SKILLS ADDED YET.</p>
             )}
           </div>
           
-          <div className="flex gap-2 mt-auto">
+          <div className="flex gap-3 mt-auto">
             <div className="relative flex-1">
               <input
                 id="offered-skill-input"
@@ -448,14 +452,14 @@ export default function ProfilePage() {
                 value={offeredSkillInput}
                 onChange={(e) => setOfferedSkillInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSkill(offeredSkillInput, 'offered'); } }}
-                placeholder="Type a skill you can teach..."
-                className="w-full pl-3 pr-4 py-2.5 rounded-xl bg-[var(--bg-surface-solid)] border border-dashed border-[var(--glass-border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] text-sm focus:outline-none focus:border-accent-emerald/50 focus:border-solid transition-all"
+                placeholder="TYPE A SKILL..."
+                className="w-full pl-3 pr-4 h-[44px] bg-white border-[3px] border-neo-ink text-sm font-bold text-neo-ink placeholder:text-neo-ink/30 focus:outline-none focus:ring-0 focus:border-neo-yellow focus:shadow-[3px_3px_0_var(--ss-yellow)] transition-all uppercase"
               />
               <datalist id="all-skills-offered">
                 {ALL_SKILLS
                   .filter((skill) => !desiredSkills.some((s) => s.skill_name.toLowerCase() === skill.name.toLowerCase()))
                   .map((skill) => (
-                    <option key={skill.id} value={skill.name} />
+                    <option key={skill.id} value={skill.name.toUpperCase()} />
                   ))}
               </datalist>
             </div>
@@ -470,38 +474,43 @@ export default function ProfilePage() {
               }}
               disabled={isAddingSkill}
               className={cn(
-                'px-4 py-2.5 rounded-xl text-sm font-medium border transition-all cursor-pointer',
+                'w-[44px] h-[44px] flex items-center justify-center border-[3px] transition-all',
                 isAddingSkill
-                  ? 'bg-[var(--bg-surface-solid)] border-[var(--glass-border)] text-[var(--text-muted)] cursor-not-allowed'
+                  ? 'bg-neo-surface border-neo-ink/20 text-neo-ink/30 cursor-not-allowed'
                   : offeredSkillInput.trim()
-                    ? 'bg-accent-emerald/10 border-accent-emerald/30 text-accent-emerald hover:bg-accent-emerald/20 hover:scale-105 active:scale-95'
-                    : 'bg-[var(--bg-surface-solid)] border-[var(--glass-border)] text-[var(--text-muted)] hover:border-accent-emerald/30 hover:text-accent-emerald'
+                    ? 'bg-white border-neo-ink text-neo-ink hover:bg-neo-yellow shadow-[2px_2px_0_#111111] hover:shadow-[4px_4px_0_#111111] hover:-translate-y-0.5 hover:-translate-x-0.5 cursor-pointer'
+                    : 'bg-white border-neo-ink text-neo-ink hover:bg-neo-surface cursor-pointer'
               )}
             >
-              {isAddingSkill ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+              {isAddingSkill ? <Loader2 size={16} strokeWidth={3} className="animate-spin" /> : <Plus size={16} strokeWidth={3} />}
             </button>
           </div>
-        </GlassCard>
+        </div>
 
-        <GlassCard padding="lg">
-          <h3 className="font-heading font-semibold text-sm uppercase tracking-wider text-accent-violet mb-4">Skills I Want</h3>
-          <div className="flex flex-wrap gap-2 mb-4">
+        <div className="ss-card border-[3px] p-6 bg-white shadow-[6px_6px_0_#111111] flex flex-col h-full">
+          <h3 className="font-heading font-black text-xl uppercase tracking-tight text-neo-ink mb-6 flex items-center gap-3 border-b-[3px] border-neo-ink pb-4">
+            <span className="w-8 h-8 flex items-center justify-center bg-neo-purple border-[2px] border-neo-ink shadow-[2px_2px_0_#111111]"><Star size={16} strokeWidth={3} className="text-white" /></span>
+            Skills I Want
+          </h3>
+          <div className="flex flex-wrap gap-2 mb-6">
             {desiredSkills.length > 0 ? (
               desiredSkills.map((s) => (
-                <SkillBadge 
-                  key={s.id} 
-                  skill={s.skill_name} 
-                  variant="want" 
-                  size="md" 
-                  onRemove={() => handleRemoveSkill(s.id, s.skill_name)} 
-                />
+                <span
+                  key={s.id}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-neo-purple text-white border-[2px] border-neo-ink text-[11px] font-heading font-black uppercase tracking-widest shadow-[2px_2px_0_#111111]"
+                >
+                  {s.skill_name}
+                  <button onClick={() => handleRemoveSkill(s.id, s.skill_name)} className="hover:bg-neo-coral hover:text-white p-0.5 border-[2px] border-transparent hover:border-neo-ink transition-colors">
+                    <X size={14} strokeWidth={3} />
+                  </button>
+                </span>
               ))
             ) : (
-              <p className="text-sm text-[var(--text-muted)] w-full">No skills added yet.</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-neo-ink/50 w-full">NO SKILLS ADDED YET.</p>
             )}
           </div>
 
-          <div className="flex gap-2 mt-auto">
+          <div className="flex gap-3 mt-auto">
             <div className="relative flex-1">
               <input
                 id="desired-skill-input"
@@ -509,14 +518,14 @@ export default function ProfilePage() {
                 value={desiredSkillInput}
                 onChange={(e) => setDesiredSkillInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSkill(desiredSkillInput, 'desired'); } }}
-                placeholder="Type a skill you want to learn..."
-                className="w-full pl-3 pr-4 py-2.5 rounded-xl bg-[var(--bg-surface-solid)] border border-dashed border-[var(--glass-border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] text-sm focus:outline-none focus:border-accent-violet/50 focus:border-solid transition-all"
+                placeholder="TYPE A SKILL..."
+                className="w-full pl-3 pr-4 h-[44px] bg-white border-[3px] border-neo-ink text-sm font-bold text-neo-ink placeholder:text-neo-ink/30 focus:outline-none focus:ring-0 focus:border-neo-purple focus:shadow-[3px_3px_0_var(--ss-purple)] transition-all uppercase"
               />
               <datalist id="all-skills-desired">
                 {ALL_SKILLS
                   .filter((skill) => !offeredSkills.some((s) => s.skill_name.toLowerCase() === skill.name.toLowerCase()))
                   .map((skill) => (
-                    <option key={skill.id} value={skill.name} />
+                    <option key={skill.id} value={skill.name.toUpperCase()} />
                   ))}
               </datalist>
             </div>
@@ -531,27 +540,27 @@ export default function ProfilePage() {
               }}
               disabled={isAddingSkill}
               className={cn(
-                'px-4 py-2.5 rounded-xl text-sm font-medium border transition-all cursor-pointer',
+                'w-[44px] h-[44px] flex items-center justify-center border-[3px] transition-all',
                 isAddingSkill
-                  ? 'bg-[var(--bg-surface-solid)] border-[var(--glass-border)] text-[var(--text-muted)] cursor-not-allowed'
+                  ? 'bg-neo-surface border-neo-ink/20 text-neo-ink/30 cursor-not-allowed'
                   : desiredSkillInput.trim()
-                    ? 'bg-accent-violet/10 border-accent-violet/30 text-accent-violet hover:bg-accent-violet/20 hover:scale-105 active:scale-95'
-                    : 'bg-[var(--bg-surface-solid)] border-[var(--glass-border)] text-[var(--text-muted)] hover:border-accent-violet/30 hover:text-accent-violet'
+                    ? 'bg-white border-neo-ink text-neo-ink hover:bg-neo-purple hover:text-white shadow-[2px_2px_0_#111111] hover:shadow-[4px_4px_0_#111111] hover:-translate-y-0.5 hover:-translate-x-0.5 cursor-pointer'
+                    : 'bg-white border-neo-ink text-neo-ink hover:bg-neo-surface cursor-pointer'
               )}
             >
-              {isAddingSkill ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+              {isAddingSkill ? <Loader2 size={16} strokeWidth={3} className="animate-spin" /> : <Plus size={16} strokeWidth={3} />}
             </button>
           </div>
-        </GlassCard>
+        </div>
       </div>
 
       {/* Danger Zone — Delete Account */}
-      <GlassCard padding="lg" className="border-red-500/20 bg-red-500/[0.03]">
-        <h3 className="font-heading font-semibold text-sm uppercase tracking-wider text-red-400 mb-2 flex items-center gap-2">
-          <AlertTriangle size={15} /> Danger Zone
+      <div className="ss-card border-[3px] border-neo-coral bg-neo-coral/5 p-6">
+        <h3 className="font-heading font-black text-lg uppercase tracking-tight text-neo-coral mb-3 flex items-center gap-2">
+          <AlertTriangle size={18} strokeWidth={3} /> Danger Zone
         </h3>
-        <p className="text-sm text-[var(--text-muted)] mb-4">
-          Permanently delete your account and all associated data. This action cannot be undone.
+        <p className="text-sm font-bold uppercase tracking-widest text-neo-ink/70 mb-6">
+          PERMANENTLY DELETE YOUR ACCOUNT AND ALL ASSOCIATED DATA. THIS ACTION CANNOT BE UNDONE.
         </p>
         <button
           id="delete-account-btn"
@@ -572,7 +581,7 @@ export default function ProfilePage() {
               const supabase = createClient();
               await supabase.auth.signOut();
               toast.success('Account deleted. Goodbye!');
-              window.location.href = '/signup';
+              window.location.href = ROUTES.signup;
             } catch (err) {
               console.error('Delete account error:', err);
               toast.error('Something went wrong. Please try again.');
@@ -581,17 +590,17 @@ export default function ProfilePage() {
             }
           }}
           disabled={deleting}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:border-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 px-6 py-3 border-[3px] border-neo-coral bg-white text-neo-coral font-heading font-black uppercase tracking-widest shadow-[4px_4px_0_var(--ss-coral)] hover:-translate-y-1 hover:shadow-[6px_6px_0_var(--ss-coral)] transition-all disabled:opacity-50 disabled:cursor-not-allowed active:shadow-none active:translate-y-[4px] active:translate-x-[4px]"
         >
-          {deleting ? <><Loader2 size={16} className="animate-spin" /> Deleting...</> : <><Trash2 size={16} /> Delete My Account</>}
+          {deleting ? <><Loader2 size={18} strokeWidth={3} className="animate-spin" /> DELETING...</> : <><Trash2 size={18} strokeWidth={3} /> DELETE MY ACCOUNT</>}
         </button>
-      </GlassCard>
+      </div>
 
       {/* Bottom save button */}
       <div className="flex justify-end pb-8">
-        <GradientButton onClick={handleSave} disabled={saving} size="lg">
-          {saving ? <><Loader2 size={16} className="animate-spin" /> Saving...</> : <><Save size={16} /> Save All Changes</>}
-        </GradientButton>
+        <Button onClick={handleSave} disabled={saving} variant="primary" size="lg" className="w-full sm:w-auto" icon={saving ? <Loader2 size={18} strokeWidth={3} className="animate-spin" /> : <Save size={18} strokeWidth={3} />}>
+          {saving ? 'SAVING CHANGES...' : 'SAVE ALL CHANGES'}
+        </Button>
       </div>
     </div>
   );

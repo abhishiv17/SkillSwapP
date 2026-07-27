@@ -6,17 +6,15 @@ export const ROUTES = {
   signup: '/signup',
   onboarding: '/onboarding',
   dashboard: '/dashboard',
-  matches: '/dashboard/matches',
+  matches: '/dashboard/sessions?view=matches',
   sessions: '/dashboard/sessions',
   profile: '/dashboard/profile',
   reviews: '/dashboard/reviews',
   leaderboard: '/dashboard/leaderboard',
   messages: '/dashboard/messages',
-  calendar: '/dashboard/calendar',
-  feed: '/dashboard/feed',
-  skills: '/dashboard/skills',
-  forum: '/dashboard/forum',
-  resources: '/dashboard/resources',
+  calendar: '/dashboard/sessions?view=calendar',
+  library: '/dashboard/library',
+  campus: '/dashboard/campus',
 } as const;
 
 export const SKILL_CATEGORIES = [

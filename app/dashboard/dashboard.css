@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  .dashboard-shell {
+    /* Dashboard-Specific Tokens */
+    --ss-ink: #111111;
+    --ss-cream: #FFF9E9;
+    --ss-surface: #FFFDF5;
+
+    --ss-purple: #7C3AED;
+    --ss-green: #B7F34A;
+    --ss-yellow: #FFD84D;
+    --ss-blue: #4DA8FF;
+    --ss-coral: #FF5C5C;
+
+    --ss-border: 2px solid var(--ss-ink);
+    --ss-border-strong: 3px solid var(--ss-ink);
+
+    --ss-shadow-sm: 2px 2px 0 var(--ss-ink);
+    --ss-shadow-md: 4px 4px 0 var(--ss-ink);
+    --ss-shadow-lg: 5px 5px 0 var(--ss-ink);
+
+    --ss-radius-sm: 4px;
+    --ss-radius-md: 6px;
+    --ss-radius-lg: 8px;
+
+    background-color: var(--ss-cream);
+    color: var(--ss-ink);
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+  }
+
+  .dashboard-shell h1,
+  .dashboard-shell h2,
+  .dashboard-shell h3,
+  .dashboard-shell h4,
+  .dashboard-shell h5,
+  .dashboard-shell h6 {
+    font-family: var(--font-space), system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .ss-card {
+    background-color: var(--ss-surface);
+    border: var(--ss-border);
+    border-radius: var(--ss-radius-md);
+    box-shadow: var(--ss-shadow-sm);
+  }
+
+  .ss-card-strong {
+    background-color: var(--ss-surface);
+    border: var(--ss-border-strong);
+    border-radius: var(--ss-radius-md);
+    box-shadow: var(--ss-shadow-md);
+  }
+
+  .ss-button-press {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .ss-button-press:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: var(--ss-shadow-md);
+  }
+  .ss-button-press:active {
+    transform: translate(3px, 3px);
+    box-shadow: 0 0 0 var(--ss-ink);
+  }
+  
+  .ss-input {
+    border: var(--ss-border);
+    border-radius: var(--ss-radius-sm);
+    background-color: white;
+    transition: all 0.2s ease;
+  }
+  .ss-input:focus {
+    outline: none;
+    border-color: var(--ss-purple);
+    box-shadow: 0 0 0 2px var(--ss-purple);
+  }
+}

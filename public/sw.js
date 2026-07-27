@@ -1,7 +1,6 @@
 const CACHE_NAME = 'skillswap-v1';
 const STATIC_ASSETS = [
   '/',
-  '/dashboard',
   '/favicon.ico',
   '/logo.png',
   '/icon-192.png',
@@ -69,7 +68,7 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(() => {
           return caches.match(event.request).then((cached) => {
-            return cached || caches.match('/dashboard');
+            return cached || caches.match('/');
           });
         })
     );

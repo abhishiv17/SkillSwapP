@@ -1,62 +1,61 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/hooks/useUser';
+import { useQuery } from '@tanstack/react-query';
 import { StatsOverview } from '@/components/dashboard/StatsOverview';
 import { SkillCard } from '@/components/dashboard/SkillCard';
-import type { MarketplaceListing } from '@/lib/mock-data';
-import { Loader2, Search } from 'lucide-react';
+import type { MarketplaceListing } from '@/types/marketplace';
+import { Search } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import { PageHeader } from '@/components/dashboard/ui/PageHeader';
+import { EmptyState } from '@/components/dashboard/ui/EmptyState';
+import { ArrowRightLeft } from 'lucide-react';
 
 function DashboardContent() {
   const { user } = useUser();
   const searchParams = useSearchParams();
-  const [listings, setListings] = useState<MarketplaceListing[]>([]);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
-  const [loading, setLoading] = useState(true);
+  const [supabase] = useState(() => createClient());
 
-  useEffect(() => {
-    if (!user) return;
-    const fetchListings = async () => {
-      const supabase = createClient();
-
-      // Fetch all offered skills (excluding current user)
+  const { data: listings = [], isLoading: loading } = useQuery({
+    queryKey: ['marketplace-listings', user?.id],
+    enabled: !!user,
+    staleTime: 60 * 1000,
+    queryFn: async () => {
       const { data: skills } = await supabase
         .from('skills')
         .select('user_id, skill_name')
         .eq('type', 'offered')
-        .neq('user_id', user.id);
+        .neq('user_id', user!.id);
 
-      if (!skills || skills.length === 0) {
-        setLoading(false);
-        return;
-      }
+      if (!skills || skills.length === 0) return [];
 
-      // Get unique user IDs
       const userIds = Array.from(new Set(skills.map((s) => s.user_id)));
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('*')
-        .in('id', userIds);
 
-      // Get desired skills for these users
-      const { data: desiredSkills } = await supabase
-        .from('skills')
-        .select('user_id, skill_name')
-        .eq('type', 'desired')
-        .in('user_id', userIds);
+      // Parallelize profiles + desired skills fetch
+      const [{ data: profiles }, { data: desiredSkills }] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('id, username, full_name, college_name, year_of_study, bio, credits, total_sessions, average_rating, created_at, preferred_mode')
+          .in('id', userIds),
+        supabase
+          .from('skills')
+          .select('user_id, skill_name')
+          .eq('type', 'desired')
+          .in('user_id', userIds),
+      ]);
 
-      // Build listings
-      const listingData: MarketplaceListing[] = skills.map((skill, idx) => {
+      return skills.map((skill, idx) => {
         const profile = profiles?.find((p) => p.id === skill.user_id);
         const wantedSkill = desiredSkills?.find((d) => d.user_id === skill.user_id);
-        const avatar = `https://api.dicebear.com/9.x/avataaars/svg?seed=${profile?.username || 'User'}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+        const avatar = `https://api.dicebear.com/9.x/bottts/svg?seed=${profile?.username || 'User'}&backgroundColor=FFF9E9`;
 
         const collegeName = profile?.college_name || 'SkillSwap Student';
         const yearStr = profile?.year_of_study ? `Year ${profile.year_of_study}` : '';
-        const bioText = profile?.bio || profile?.about_me || '';
+        const bioText = profile?.bio || '';
 
         return {
           id: `listing-${idx}`,
@@ -79,62 +78,68 @@ function DashboardContent() {
           skillOffered: skill.skill_name,
           skillWanted: wantedSkill?.skill_name || 'Any skill',
           description: bioText || `${profile?.full_name || profile?.username || 'A student'} is offering to teach ${skill.skill_name}. Connect to start swapping skills!`,
-          creditsPerHour: 1, // Standardized for now as 1 session = 1 credit
+          creditsPerHour: 1,
           availability: profile?.preferred_mode === 'online' ? 'Online' : profile?.preferred_mode === 'offline' ? 'Offline' : 'Flexible',
           tags: [skill.skill_name, collegeName].filter(Boolean),
-        };
+        } as MarketplaceListing;
       });
-
-      setListings(listingData);
-      setLoading(false);
-    };
-    fetchListings();
-  }, [user]);
+    },
+  });
 
   return (
-    <div className="space-y-8">
-      {/* Welcome */}
-      <div>
-        <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mb-1">
-          Marketplace
-        </h1>
-        <p className="text-sm text-[var(--text-muted)]">
-          Browse skill listings from fellow students and find your next swap
-        </p>
-      </div>
+    <div className="space-y-12">
+      <PageHeader 
+        title="Marketplace" 
+        subtitle="Find someone who knows what you want to learn — and teach something in return."
+      />
 
-      {/* Stats */}
       <StatsOverview />
 
-      {/* Listings grid */}
       <div>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <h2 className="font-heading text-lg font-semibold text-[var(--text-primary)]">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+          <h2 className="font-heading font-black text-xl text-neo-ink uppercase tracking-tight">
             Available Swaps
           </h2>
-          {/* Search Bar */}
-          <div className="relative w-full sm:w-72">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search size={16} className="text-[var(--text-muted)]" />
-            </div>
+          
+          <div className="relative w-full sm:w-[320px]">
+            <Search size={18} strokeWidth={2.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-neo-ink" />
             <input
               type="text"
-              placeholder="Search skills, users..."
+              placeholder="Search skills or students..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-[var(--bg-surface-solid)] border border-[var(--glass-border)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-accent-violet/50 transition-colors"
+              className="w-full pl-10 pr-4 h-[44px] rounded-md bg-white border-[2px] border-neo-ink text-neo-ink placeholder:text-neo-ink/50 text-sm font-bold focus:outline-none focus:ring-0 focus:border-neo-purple focus:shadow-[3px_3px_0_var(--ss-purple)] transition-all uppercase tracking-wide"
             />
           </div>
         </div>
         
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 size={24} className="animate-spin text-accent-violet" />
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="ss-card border-[3px] h-[320px] bg-white animate-pulse flex flex-col">
+                <div className="p-5 flex-1 space-y-4">
+                  <div className="flex gap-4">
+                    <div className="w-12 h-12 bg-neo-ink/10 rounded-md" />
+                    <div className="flex-1 space-y-2 py-1">
+                      <div className="h-4 bg-neo-ink/10 rounded w-2/3" />
+                      <div className="h-3 bg-neo-ink/10 rounded w-1/3" />
+                    </div>
+                  </div>
+                  <div className="space-y-3 pt-2">
+                    <div className="h-8 bg-neo-ink/10 rounded" />
+                    <div className="h-8 bg-neo-ink/10 rounded" />
+                  </div>
+                </div>
+                <div className="p-4 border-t-[3px] border-neo-ink bg-neo-cream h-[60px]" />
+              </div>
+            ))}
           </div>
         ) : listings.length === 0 ? (
-          <p className="text-center py-12 text-[var(--text-muted)]">
-            No listings yet. Be the first to add your skills!
-          </p>
+          <EmptyState
+            icon={ArrowRightLeft}
+            title="NO SWAPS HERE YET"
+            description="Add the skills you can teach to your profile to start appearing in the marketplace."
+          />
         ) : (
           (() => {
             const filteredListings = listings.filter((listing) => {
@@ -149,14 +154,16 @@ function DashboardContent() {
 
             if (filteredListings.length === 0) {
               return (
-                <p className="text-center py-12 text-[var(--text-muted)]">
-                  No listings found matching &quot;{searchQuery}&quot;.
-                </p>
+                <EmptyState
+                  icon={Search}
+                  title="NO MATCHES FOUND"
+                  description={`No listings found matching "${searchQuery}".`}
+                />
               );
             }
 
             return (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredListings.map((listing) => (
                   <SkillCard key={listing.id} listing={listing} />
                 ))}
@@ -171,7 +178,14 @@ function DashboardContent() {
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-accent-violet" /></div>}>
+    <Suspense fallback={
+      <div className="space-y-12 animate-pulse">
+        <div className="h-32 bg-neo-ink/5 rounded-md border-[3px] border-neo-ink/10" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => <div key={i} className="h-28 bg-neo-ink/5 rounded-md border-[3px] border-neo-ink/10" />)}
+        </div>
+      </div>
+    }>
       <DashboardContent />
     </Suspense>
   );

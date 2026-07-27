@@ -152,7 +152,7 @@ export default function ForumPostDetailsPage() {
 
       if (error) throw error;
       toast.success('Post deleted successfully');
-      router.push('/dashboard/forum');
+      router.push('/dashboard/campus');
     } catch (err: any) {
       toast.error(err.message || 'Failed to delete post');
     }
@@ -187,7 +187,7 @@ export default function ForumPostDetailsPage() {
     return (
       <div className="text-center py-20">
         <h2 className="text-xl font-bold text-[var(--text-primary)]">Post not found</h2>
-        <Link href="/dashboard/forum" className="text-accent-violet mt-4 inline-block hover:underline">
+        <Link href="/dashboard/campus" className="text-accent-violet mt-4 inline-block hover:underline">
           Return to Forum
         </Link>
       </div>
@@ -199,7 +199,7 @@ export default function ForumPostDetailsPage() {
       {/* Header */}
       <div>
         <Link 
-          href="/dashboard/forum" 
+          href="/dashboard/campus" 
           className="inline-flex items-center gap-2 text-sm font-medium text-[var(--text-muted)] hover:text-accent-violet transition-colors mb-4"
         >
           <ArrowLeft size={16} /> Back to Forum
@@ -250,7 +250,7 @@ export default function ForumPostDetailsPage() {
               {user?.id === post.author_id && (
                 <div className="flex items-center gap-2 shrink-0">
                   <Link 
-                    href={`/dashboard/forum/edit/${id}`}
+                    href={`/dashboard/campus/edit/${id}`}
                     className="p-2 rounded-lg bg-[var(--bg-surface-solid)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-accent-violet hover:border-accent-violet/30 transition-all"
                     title="Edit Post"
                   >
@@ -269,7 +269,7 @@ export default function ForumPostDetailsPage() {
 
             <div className="flex items-center gap-2 mb-6">
               <div className="w-8 h-8 rounded-full overflow-hidden bg-[var(--bg-surface-solid)] shrink-0">
-                <img src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${post.author.username}`} alt={post.author.username} />
+                <img src={`https://api.dicebear.com/9.x/bottts/svg?seed=${post.author.username}&backgroundColor=FFF9E9`} alt={post.author.username} />
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-semibold text-[var(--text-primary)]">@{post.author.username}</span>
@@ -359,7 +359,7 @@ export default function ForumPostDetailsPage() {
                 
                 <div className="flex gap-4">
                   <div className="w-10 h-10 rounded-full overflow-hidden bg-[var(--bg-surface-solid)] shrink-0">
-                    <img src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${comment.author.username}`} alt={comment.author.username} />
+                    <img src={`https://api.dicebear.com/9.x/bottts/svg?seed=${comment.author.username}&backgroundColor=FFF9E9`} alt={comment.author.username} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-2">

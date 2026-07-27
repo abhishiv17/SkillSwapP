@@ -2,99 +2,82 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { GradientButton } from '@/components/shared/GradientButton';
+import { NeoButton } from '@/components/shared/NeoButton';
 import { ROUTES } from '@/lib/constants';
-import { ArrowRight, Sparkles } from 'lucide-react';
 import { AnimatedCounter } from '@/components/shared/AnimatedCounter';
-
-const skills = ['Python', 'Guitar', 'UI/UX', '日本語', 'Photography', 'Yoga', 'React', 'Piano'];
+import { SkillSticker } from '@/components/landing/SkillSticker';
+import { SkillExchangeBoard } from '@/components/landing/SkillExchangeBoard';
 
 export function Hero() {
-  const [scrollY, setScrollY] = useState(0);
   const [userCount, setUserCount] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-    
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     fetch('/api/stats')
       .then(res => res.json())
       .then(data => setUserCount(data.users))
-      .catch(() => setUserCount(47)); // fallback
+      .catch(() => setUserCount(47));
   }, []);
 
   return (
-    <section className="relative min-h-[100vh] flex items-center justify-center overflow-hidden">
-      {/* Soft pastel blobs — organic, asymmetric with gentle scroll parallax */}
-      <div 
-        className="absolute inset-0 pointer-events-none overflow-hidden transition-transform duration-75 ease-out"
-        style={{ transform: `translateY(${scrollY * 0.15}px)` }}
-      >
-        <div className="absolute -top-[20%] -right-[10%] w-[700px] h-[700px] rounded-full bg-accent-matcha/40 dark:bg-accent-matcha/20 blur-3xl animate-pulse-glow" />
-        <div className="absolute -bottom-[15%] -left-[10%] w-[600px] h-[600px] rounded-full bg-accent-rose/30 dark:bg-accent-rose/15 blur-3xl animate-pulse-glow" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-[40%] left-[60%] w-[400px] h-[400px] rounded-full bg-accent-slate/30 dark:bg-accent-slate/15 blur-3xl animate-pulse-glow" style={{ animationDelay: '3.5s' }} />
-      </div>
+    <section className="relative min-h-[calc(100svh-84px)] mt-[84px] py-12 lg:py-20 flex items-center overflow-hidden bg-neo-cream border-b-[4px] border-neo-ink">
+      <div className="mx-auto w-full max-w-[1440px] px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+        
+        {/* LEFT COLUMN: 55% */}
+        <div className="lg:col-span-7 flex flex-col items-start text-left z-10 w-full">
+          
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-neo-yellow border-[3px] border-neo-ink rounded-full shadow-[2px_2px_0_#111111] mb-8 lg:mb-10 animate-fade-in">
+            <div className="w-3 h-3 rounded-full bg-neo-ink animate-pulse" />
+            <span className="font-heading font-black uppercase text-sm tracking-widest text-neo-ink">
+              <AnimatedCounter target={userCount} /> students swapping skills
+            </span>
+          </div>
 
-      <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
+          <h1 
+            className="font-heading font-black text-neo-ink uppercase mb-8 leading-[0.88] tracking-[-0.05em] w-full"
+            style={{ fontSize: 'clamp(56px, 7vw, 112px)' }}
+          >
+            <span className="block mb-2">SWAP SKILLS.</span>
+            <span className="inline-block bg-neo-green px-4 py-1 border-[4px] border-neo-ink shadow-[6px_6px_0_#111111] -rotate-1 text-neo-ink relative z-10">
+              NOT CASH.
+            </span>
+          </h1>
 
+          <p className="max-w-xl text-lg md:text-xl text-neo-ink font-bold leading-relaxed mb-10 border-l-[4px] border-neo-purple pl-6">
+            Master new skills through peer exchange.<br/>
+            Teach what you know. Learn what you don&apos;t.<br/>
+            No cash required.
+          </p>
 
-        {/* Social proof — minimal, no card */}
-        <p className="text-[13px] font-medium text-[var(--text-muted)] tracking-widest uppercase mb-10">
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent-matcha mr-2 align-middle" />
-          <AnimatedCounter target={userCount} /> students swapping skills
-        </p>
+          <div className="flex flex-col sm:flex-row items-center gap-6 mb-12 w-full sm:w-auto">
+            <Link href={ROUTES.signup} className="w-full sm:w-auto">
+              <NeoButton size="lg" className="w-full">
+                START SWAPPING &rarr;
+              </NeoButton>
+            </Link>
+            <Link href="#how-it-works" className="w-full sm:w-auto">
+              <NeoButton variant="secondary" size="lg" className="w-full">
+                HOW IT WORKS
+              </NeoButton>
+            </Link>
+          </div>
 
-        {/* Hero heading — big, warm */}
-        <h1 className="font-heading text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-extrabold leading-[0.92] tracking-[-0.03em] mb-7">
-          <span className="text-[var(--text-primary)]">Swap Skills,</span>
-          <br />
-          <span className="gradient-text">Not Cash.</span>
-        </h1>
-
-        {/* Subheading */}
-        <p className="stagger-in max-w-lg mx-auto text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed mb-12">
-          Master any skill through peer exchange. Powered by Llama 3.1 AI, 
-          a thriving Community Forum, and a gamified Milestone system.
-        </p>
-
-        {/* CTAs */}
-        <div className="stagger-in flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
-          <Link href={ROUTES.signup}>
-            <GradientButton size="lg">
-              Start Swapping
-              <ArrowRight size={18} />
-            </GradientButton>
-          </Link>
-          <Link href="#how-it-works">
-            <GradientButton variant="outline" size="lg">
-              See How It Works
-            </GradientButton>
-          </Link>
+          {/* Skill Stickers */}
+          <div className="flex flex-wrap items-center gap-3 w-full">
+            <SkillSticker skill="CODE" />
+            <SkillSticker skill="DESIGN" />
+            <SkillSticker skill="日本語" />
+            <SkillSticker skill="MUSIC" />
+            <SkillSticker skill="PHOTOGRAPHY" />
+            <SkillSticker skill="REACT" />
+          </div>
+          
         </div>
 
-        {/* Skill tags — scattered, organic sizes */}
-        <div className="stagger-in flex flex-wrap items-center justify-center gap-3">
-          {skills.map((skill, i) => (
-            <div
-              key={skill}
-              className="animate-float inline-block"
-              style={{ animationDelay: `${i * 0.4}s` }}
-            >
-              <span
-                className="inline-block px-5 py-2.5 rounded-full text-sm font-medium text-[var(--text-secondary)] glass transition-all duration-300 hover:scale-110 hover:-translate-y-1 hover:text-[var(--text-primary)] hover:shadow-lg hover:shadow-accent-matcha/10 cursor-default"
-                style={{ fontSize: `${13 + (i % 3) * 2}px` }}
-              >
-                {skill}
-              </span>
-            </div>
-          ))}
+        {/* RIGHT COLUMN: 45% (Skill Exchange Board) */}
+        <div className="lg:col-span-5 w-full flex items-center justify-center lg:justify-end relative z-0 mt-8 lg:mt-0">
+          <SkillExchangeBoard />
         </div>
+
       </div>
     </section>
   );

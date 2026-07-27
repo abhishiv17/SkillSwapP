@@ -23,27 +23,26 @@ const SUGGESTIONS = [
 ];
 
 function MarkdownMessage({ content }: { content: string }) {
-// ... rest of MarkdownMessage ...
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
       components={{
-        p: ({ children }) => <p className="mb-1.5 last:mb-0 leading-relaxed">{children}</p>,
-        strong: ({ children }) => <span className="font-semibold text-[var(--text-primary)]">{children}</span>,
-        em: ({ children }) => <span className="italic text-[var(--text-secondary)]">{children}</span>,
-        ul: ({ children }) => <ul className="mt-1 mb-2 space-y-1 pl-1">{children}</ul>,
-        ol: ({ children }) => <ol className="mt-1 mb-2 space-y-1 pl-1 list-decimal list-inside">{children}</ol>,
-        li: ({ children }) => <li className="flex items-start gap-2 text-[var(--text-secondary)]"><span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-accent-violet/60 shrink-0" /><span>{children}</span></li>,
-        h1: ({ children }) => <h1 className="font-heading font-bold text-sm text-[var(--text-primary)] mb-1 mt-2">{children}</h1>,
-        h2: ({ children }) => <h2 className="font-heading font-semibold text-sm text-[var(--text-primary)] mb-1 mt-2 border-b border-[var(--glass-border)] pb-0.5">{children}</h2>,
-        h3: ({ children }) => <h3 className="font-heading font-semibold text-xs text-accent-violet uppercase tracking-wider mb-1 mt-2">{children}</h3>,
+        p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed text-sm font-bold uppercase">{children}</p>,
+        strong: ({ children }) => <span className="font-heading font-black text-neo-ink">{children}</span>,
+        em: ({ children }) => <span className="italic text-neo-ink/80">{children}</span>,
+        ul: ({ children }) => <ul className="mt-2 mb-3 space-y-2 pl-4 list-disc marker:text-neo-ink uppercase text-xs font-bold">{children}</ul>,
+        ol: ({ children }) => <ol className="mt-2 mb-3 space-y-2 pl-4 list-decimal marker:text-neo-ink uppercase text-xs font-bold">{children}</ol>,
+        li: ({ children }) => <li className="pl-1">{children}</li>,
+        h1: ({ children }) => <h1 className="font-heading font-black text-xl text-neo-ink mb-2 mt-4 uppercase tracking-tight">{children}</h1>,
+        h2: ({ children }) => <h2 className="font-heading font-black text-lg text-neo-ink mb-2 mt-4 border-b-[3px] border-neo-ink pb-1 uppercase tracking-tight">{children}</h2>,
+        h3: ({ children }) => <h3 className="font-heading font-black text-sm text-neo-purple uppercase tracking-widest mb-2 mt-3">{children}</h3>,
         code: ({ children, className }) => {
           const isBlock = className?.includes('language-');
-          return isBlock ? <code className="block bg-[var(--bg-surface)] border border-[var(--glass-border)] rounded-lg px-3 py-2 text-xs font-mono text-accent-amber overflow-x-auto my-2 whitespace-pre">{children}</code> : <code className="bg-[var(--bg-surface)] border border-[var(--glass-border)] rounded px-1.5 py-0.5 text-xs font-mono text-accent-amber">{children}</code>;
+          return isBlock ? <code className="block bg-neo-surface border-[3px] border-neo-ink p-3 text-xs font-mono text-neo-ink overflow-x-auto my-3 whitespace-pre shadow-[4px_4px_0_#111111]">{children}</code> : <code className="bg-neo-yellow/30 border-[2px] border-neo-ink px-1.5 py-0.5 text-xs font-mono text-neo-ink font-bold">{children}</code>;
         },
-        blockquote: ({ children }) => <blockquote className="border-l-2 border-accent-violet/40 pl-3 my-2 text-[var(--text-muted)] italic text-xs">{children}</blockquote>,
-        hr: () => <hr className="border-[var(--glass-border)] my-2" />,
-        a: ({ children, href }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-accent-violet underline underline-offset-2 hover:opacity-80 transition-opacity">{children}</a>,
+        blockquote: ({ children }) => <blockquote className="border-l-[4px] border-neo-purple pl-4 py-1 my-3 bg-neo-purple/10 text-neo-ink font-bold text-sm uppercase">{children}</blockquote>,
+        hr: () => <hr className="border-t-[3px] border-neo-ink my-4" />,
+        a: ({ children, href }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-neo-purple font-black underline hover:bg-neo-yellow transition-colors decoration-[2px] underline-offset-4">{children}</a>,
       }}
     >
       {content}
@@ -53,9 +52,9 @@ function MarkdownMessage({ content }: { content: string }) {
 
 function TypingIndicator() {
   return (
-    <div className="flex items-center gap-1 py-1 px-1">
+    <div className="flex items-center gap-1.5 py-1 px-1">
       {[0, 150, 300].map((delay) => (
-        <span key={delay} className="w-1.5 h-1.5 bg-accent-violet/50 rounded-full animate-bounce" style={{ animationDelay: `${delay}ms` }} />
+        <span key={delay} className="w-2.5 h-2.5 bg-neo-ink rounded-full animate-bounce border-[2px] border-neo-ink shadow-[1px_1px_0_#111111]" style={{ animationDelay: `${delay}ms` }} />
       ))}
     </div>
   );
@@ -67,7 +66,7 @@ export function ChatbotWidget() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "Hi! I'm your **SkillSwap AI**. I can:\n- 🎯 Find you the perfect skill match\n- 🧠 Quiz you on your skills\n- 📚 Prep you before a session\n\nWhat can I help with?",
+      content: "HI! I'M YOUR **SKILLSWAP AI**. I CAN:\n- 🎯 FIND YOU THE PERFECT SKILL MATCH\n- 🧠 QUIZ YOU ON YOUR SKILLS\n- 📚 PREP YOU BEFORE A SESSION\n\nWHAT CAN I HELP WITH?",
     },
   ]);
   const [input, setInput] = useState('');
@@ -192,33 +191,61 @@ export function ChatbotWidget() {
   };
 
   return (
-    <div className="fixed bottom-20 right-4 lg:bottom-6 lg:right-6 z-50 flex flex-col items-end pointer-events-none">
+    <div className="fixed bottom-24 right-4 lg:bottom-8 lg:right-8 z-50 flex flex-col items-end pointer-events-none">
       <div className={cn('mb-4 transition-all duration-300 origin-bottom-right', isOpen ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto' : 'opacity-0 scale-95 translate-y-4 pointer-events-none')}>
-        <div className={cn("flex flex-col glass rounded-3xl shadow-2xl border border-accent-violet/15 overflow-hidden", isFullScreen ? "fixed inset-2 sm:inset-4 w-auto h-auto z-[60] rounded-2xl" : "w-[calc(100vw-2rem)] sm:w-[420px] h-[70vh] sm:h-[560px] max-h-[80vh]")}>
-          <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-accent-violet/10 to-accent-amber/5 border-b border-[var(--glass-border)] shrink-0">
+        <div className={cn("flex flex-col ss-card bg-white border-[4px] shadow-[8px_8px_0_#111111] overflow-hidden", isFullScreen ? "fixed inset-4 w-auto h-auto z-[60]" : "w-[calc(100vw-2rem)] sm:w-[420px] h-[70vh] sm:h-[600px] max-h-[80vh]")}>
+          
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 bg-neo-purple border-b-[4px] border-neo-ink shrink-0">
             <div className="flex items-center gap-3">
-              <div className="relative w-9 h-9 rounded-full bg-gradient-to-tr from-accent-violet to-accent-amber flex items-center justify-center shadow-lg">
-                <Sparkles size={16} className="text-white" />
-                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-[var(--bg-surface)]" />
+              <div className="relative w-10 h-10 border-[2px] border-neo-ink bg-neo-yellow flex items-center justify-center shadow-[2px_2px_0_#111111]">
+                <Sparkles size={20} strokeWidth={3} className="text-neo-ink" />
+                <span className="absolute -bottom-1.5 -right-1.5 w-3.5 h-3.5 bg-neo-green border-[2px] border-neo-ink" />
               </div>
               <div>
-                <p className="font-heading font-bold text-sm text-[var(--text-primary)] leading-tight">SkillSwap AI</p>
-                <p className="text-[10px] text-accent-violet font-medium">Your personal study assistant</p>
+                <p className="font-heading font-black text-xl text-white uppercase tracking-tight leading-none mb-1 drop-shadow-[2px_2px_0_#111111]">SkillSwap AI</p>
+                <p className="text-[10px] font-bold text-white/90 uppercase tracking-widest leading-none">Your personal assistant</p>
               </div>
             </div>
-            <div className="flex gap-1">
-              <button onClick={() => setIsFullScreen(!isFullScreen)} className="p-1 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-solid)]"><Maximize2 size={16}/></button>
-              <button onClick={() => setIsOpen(false)} className="w-7 h-7 rounded-full flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-solid)] transition-all"><ChevronDown size={18} /></button>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setIsFullScreen(!isFullScreen)} 
+                className="w-8 h-8 flex items-center justify-center border-[2px] border-neo-ink bg-white hover:bg-neo-yellow text-neo-ink shadow-[2px_2px_0_#111111] active:shadow-none active:translate-y-[2px] transition-all"
+              >
+                {isFullScreen ? <Minimize2 size={16} strokeWidth={3} /> : <Maximize2 size={16} strokeWidth={3} />}
+              </button>
+              <button 
+                onClick={() => setIsOpen(false)} 
+                className="w-8 h-8 flex items-center justify-center border-[2px] border-neo-ink bg-neo-coral hover:bg-white text-neo-ink shadow-[2px_2px_0_#111111] active:shadow-none active:translate-y-[2px] transition-all"
+              >
+                <ChevronDown size={20} strokeWidth={3} />
+              </button>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scroll-smooth">
+          {/* Chat Messages */}
+          <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5 scroll-smooth bg-neo-cream">
             {messages.map((msg, idx) => (
-              <div key={idx} className={cn('flex gap-2.5 max-w-[90%]', msg.role === 'user' ? 'ml-auto flex-row-reverse' : 'mr-auto')}>
-                <div className={cn('shrink-0 w-7 h-7 rounded-full flex items-center justify-center mt-0.5', msg.role === 'user' ? 'bg-[var(--bg-surface-solid)] border border-[var(--glass-border)]' : 'bg-gradient-to-tr from-accent-violet to-accent-amber shadow-sm')}>
-                  {msg.role === 'user' ? <User size={13} className="text-[var(--text-muted)]" /> : <Bot size={13} className="text-white" />}
+              <div key={idx} className={cn('flex gap-3 max-w-[90%]', msg.role === 'user' ? 'ml-auto flex-row-reverse' : 'mr-auto')}>
+                
+                {/* Avatar */}
+                <div className={cn(
+                  'shrink-0 w-8 h-8 flex items-center justify-center border-[2px] border-neo-ink shadow-[2px_2px_0_#111111]', 
+                  msg.role === 'user' ? 'bg-neo-green' : 'bg-neo-purple'
+                )}>
+                  {msg.role === 'user' ? <User size={16} strokeWidth={3} className="text-neo-ink" /> : <Bot size={16} strokeWidth={3} className="text-white" />}
                 </div>
-                <div className={cn('rounded-2xl text-sm leading-relaxed px-4 py-3', msg.role === 'user' ? 'bg-gradient-to-br from-accent-violet/15 to-accent-violet/5 border border-accent-violet/20 text-[var(--text-primary)] rounded-tr-sm' : 'bg-[var(--bg-surface-solid)] border border-[var(--glass-border)] text-[var(--text-secondary)] rounded-tl-sm')}>
+
+                {/* Bubble */}
+                <div className={cn(
+                  'text-sm leading-relaxed px-4 py-3 border-[3px] border-neo-ink shadow-[4px_4px_0_#111111]', 
+                  msg.role === 'user' 
+                    ? 'bg-neo-yellow text-neo-ink rounded-bl-xl rounded-tl-xl rounded-br-xl' 
+                    : 'bg-white text-neo-ink rounded-tr-xl rounded-br-xl rounded-bl-xl'
+                )}>
+                  {msg.image && (
+                    <img src={msg.image} alt="User attachment" className="max-w-full rounded-md border-[2px] border-neo-ink mb-2" />
+                  )}
                   {msg.role === 'assistant' && msg.content === '' && isTyping ? <TypingIndicator /> : <MarkdownMessage content={msg.content} />}
                 </div>
               </div>
@@ -226,30 +253,69 @@ export function ChatbotWidget() {
             <div ref={messagesEndRef} />
           </div>
 
-          <form onSubmit={handleSubmit} className="px-4 py-3 border-t border-[var(--glass-border)] bg-[var(--bg-surface)] shrink-0">
+          {/* Input Area */}
+          <form onSubmit={handleSubmit} className="px-4 py-4 border-t-[4px] border-neo-ink bg-white shrink-0 relative z-10">
             {attachedImage && (
-              <div className="mb-2 relative w-16 h-16 rounded-lg overflow-hidden border border-[var(--glass-border)]">
+              <div className="mb-3 relative w-16 h-16 border-[3px] border-neo-ink shadow-[2px_2px_0_#111111]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={attachedImage} alt="Attached" className="w-full h-full object-cover" />
-                <button type="button" onClick={() => setAttachedImage(null)} className="absolute top-1 right-1 w-5 h-5 bg-black/60 rounded-full flex items-center justify-center text-white"><X size={12} /></button>
+                <button type="button" onClick={() => setAttachedImage(null)} className="absolute -top-2 -right-2 w-6 h-6 bg-neo-coral border-[2px] border-neo-ink flex items-center justify-center text-white shadow-[2px_2px_0_#111111] hover:translate-y-[1px] hover:shadow-[1px_1px_0_#111111]"><X size={14} strokeWidth={3} /></button>
               </div>
             )}
             {attachedFile && (
-              <div className="mb-2 p-2 rounded-lg border border-[var(--glass-border)] bg-[var(--bg-surface-solid)] flex items-center justify-between w-fit max-w-[200px]">
-                <div className="flex items-center gap-2 overflow-hidden"><FileText size={16} className="text-accent-violet shrink-0" /><span className="text-xs font-medium text-[var(--text-primary)] truncate">{attachedFile.name}</span></div>
-                <button type="button" onClick={() => setAttachedFile(null)} className="ml-2"><X size={14} /></button>
+              <div className="mb-3 p-2 border-[3px] border-neo-ink bg-neo-surface shadow-[2px_2px_0_#111111] flex items-center justify-between w-fit max-w-[200px]">
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <FileText size={16} strokeWidth={3} className="text-neo-ink shrink-0" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-neo-ink truncate">{attachedFile.name}</span>
+                </div>
+                <button type="button" onClick={() => setAttachedFile(null)} className="ml-3 hover:text-neo-coral"><X size={16} strokeWidth={3} /></button>
               </div>
             )}
-            <div className="flex items-center gap-2 bg-[var(--bg-surface-solid)] rounded-2xl border border-[var(--glass-border)] px-4 py-2">
-              <button type="button" onClick={() => fileInputRef.current?.click()} className="text-[var(--text-muted)] hover:text-accent-violet"><Paperclip size={16} /></button>
+            <div className="flex items-center gap-2 bg-white border-[3px] border-neo-ink p-1 shadow-[4px_4px_0_#111111]">
+              <button 
+                type="button" 
+                onClick={() => fileInputRef.current?.click()} 
+                className="w-10 h-10 flex items-center justify-center hover:bg-neo-surface text-neo-ink transition-colors border-[2px] border-transparent hover:border-neo-ink"
+              >
+                <Paperclip size={18} strokeWidth={3} />
+              </button>
               <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
-              <input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask me anything..." disabled={isTyping} className="flex-1 bg-transparent text-sm focus:outline-none" />
-              <button type="button" onClick={handleMicClick} className={cn("p-1", isListening && "text-accent-coral animate-pulse")}><Mic size={16} /></button>
-              <button type="submit" disabled={(!input.trim() && !attachedImage && !attachedFile) || isTyping} className={cn('w-8 h-8 rounded-xl flex items-center justify-center', (input.trim() || attachedImage || attachedFile) && !isTyping ? 'bg-gradient-to-tr from-accent-violet to-accent-amber text-white' : 'bg-[var(--glass-border)]')}>
-                {isTyping ? <Loader2 size={14} className="animate-spin" /> : <Send size={13} />}
+              
+              <input 
+                ref={inputRef} 
+                type="text" 
+                value={input} 
+                onChange={(e) => setInput(e.target.value)} 
+                placeholder="ASK ME ANYTHING..." 
+                disabled={isTyping} 
+                className="flex-1 bg-transparent text-sm font-bold uppercase text-neo-ink placeholder:text-neo-ink/30 focus:outline-none" 
+              />
+              
+              <button 
+                type="button" 
+                onClick={handleMicClick} 
+                className={cn(
+                  "w-10 h-10 flex items-center justify-center transition-colors border-[2px] border-transparent",
+                  isListening ? "bg-neo-coral text-white border-neo-ink animate-pulse" : "hover:bg-neo-surface text-neo-ink hover:border-neo-ink"
+                )}
+              >
+                <Mic size={18} strokeWidth={3} />
+              </button>
+              
+              <button 
+                type="submit" 
+                disabled={(!input.trim() && !attachedImage && !attachedFile) || isTyping} 
+                className={cn(
+                  'w-12 h-10 flex items-center justify-center border-[2px] border-neo-ink transition-all', 
+                  (input.trim() || attachedImage || attachedFile) && !isTyping 
+                    ? 'bg-neo-purple hover:bg-neo-purple/90 text-white shadow-[2px_2px_0_#111111] hover:shadow-none hover:translate-y-[2px] hover:translate-x-[2px]' 
+                    : 'bg-neo-surface text-neo-ink/30 cursor-not-allowed'
+                )}
+              >
+                {isTyping ? <Loader2 size={18} strokeWidth={3} className="animate-spin" /> : <Send size={18} strokeWidth={3} />}
               </button>
             </div>
-            <p className="text-[10px] text-[var(--text-muted)] text-center mt-2">Powered by Groq · Llama 3.1</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-neo-ink/40 text-center mt-3">Powered by Groq · Llama 3.1</p>
           </form>
         </div>
       </div>
@@ -258,18 +324,18 @@ export function ChatbotWidget() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'pointer-events-auto w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95',
+          'pointer-events-auto w-16 h-16 flex items-center justify-center border-[4px] border-neo-ink shadow-[6px_6px_0_#111111] hover:shadow-[8px_8px_0_#111111] active:shadow-[2px_2px_0_#111111] active:translate-y-[4px] active:translate-x-[4px] transition-all',
           isOpen
-            ? 'bg-[var(--bg-surface-solid)] border border-[var(--glass-border)] text-[var(--text-muted)]'
-            : 'bg-gradient-to-tr from-accent-violet to-accent-amber text-white shadow-accent-violet/30'
+            ? 'bg-white text-neo-ink'
+            : 'bg-neo-purple text-white hover:bg-neo-yellow hover:text-neo-ink'
         )}
       >
-        <div className={cn('transition-all duration-300', isOpen ? 'rotate-0' : 'rotate-0')}>
-          {isOpen ? <X size={22} /> : <Bot size={26} />}
+        <div className={cn('transition-all duration-300', isOpen ? 'rotate-90' : 'rotate-0')}>
+          {isOpen ? <X size={28} strokeWidth={3} /> : <Bot size={28} strokeWidth={3} />}
         </div>
         {/* Notification pulse when closed */}
         {!isOpen && (
-          <span className="absolute top-0.5 right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-[var(--bg-base)] animate-pulse" />
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-neo-green border-[2px] border-neo-ink animate-pulse" />
         )}
       </button>
     </div>

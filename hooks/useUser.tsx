@@ -115,6 +115,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setProfile(null);
     setSkills([]);
+    // Full page reload ensures middleware catches the cleared cookies
+    window.location.href = '/login';
   }, [supabase.auth]);
 
   return (

@@ -2,8 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useUser } from '@/hooks/useUser';
-import { GlassCard } from '@/components/shared/GlassCard';
-import { Sparkles, ArrowRight, Loader2, BookOpen, GraduationCap } from 'lucide-react';
+import { Sparkles, ArrowRight, BookOpen, GraduationCap } from 'lucide-react';
 import Link from 'next/link';
 
 interface Recommendation {
@@ -35,58 +34,60 @@ export function AIRecommendations() {
   if (error) return null; // Fail silently, it's an optional enhancement
 
   return (
-    <GlassCard padding="lg" gradient className="mb-8 border-accent-violet/20 bg-gradient-to-br from-accent-violet/5 to-[var(--bg-surface-solid)] overflow-hidden relative">
-      {/* Decorative background blur */}
-      <div className="absolute -top-24 -right-24 w-48 h-48 bg-accent-violet/20 rounded-full blur-3xl pointer-events-none" />
+    <div className="ss-card border-[4px] bg-neo-purple p-6 mb-8 shadow-[8px_8px_0_#111111] overflow-hidden relative text-white">
+      {/* Decorative dots background */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 2px, transparent 2px)', backgroundSize: '16px 16px' }} />
       
-      <div className="flex items-center gap-2 mb-4 relative z-10">
-        <Sparkles size={20} className="text-accent-violet" />
-        <h2 className="font-heading font-bold text-lg text-[var(--text-primary)]">AI Skill Suggestions</h2>
-        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent-violet/10 text-accent-violet border border-accent-violet/20 uppercase tracking-wider ml-2">
+      <div className="flex items-center gap-3 mb-4 relative z-10 border-b-[3px] border-neo-ink pb-4">
+        <div className="w-10 h-10 border-[2px] border-neo-ink bg-neo-yellow flex items-center justify-center shadow-[2px_2px_0_#111111]">
+          <Sparkles size={20} strokeWidth={3} className="text-neo-ink" />
+        </div>
+        <h2 className="font-heading font-black text-2xl uppercase tracking-tight leading-none drop-shadow-[2px_2px_0_#111111]">AI Skill Suggestions</h2>
+        <span className="text-[10px] font-bold px-2 py-1 bg-white text-neo-ink border-[2px] border-neo-ink shadow-[2px_2px_0_#111111] uppercase tracking-widest ml-2 hidden sm:inline-block">
           Powered by Llama 3.1
         </span>
       </div>
 
-      <p className="text-sm text-[var(--text-muted)] mb-6 relative z-10">
+      <p className="text-sm font-bold uppercase tracking-widest text-white/90 mb-6 relative z-10">
         Based on your profile, background, and current skills, here&apos;s what we think you should explore next.
       </p>
 
       {isLoading ? (
-        <div className="flex gap-4 overflow-x-auto pb-4 snap-x">
+        <div className="flex gap-4 overflow-x-auto pb-4 snap-x custom-scrollbar">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="min-w-[280px] h-32 rounded-xl bg-[var(--bg-surface-solid)] border border-[var(--glass-border)] animate-pulse shrink-0 snap-start" />
+            <div key={i} className="min-w-[280px] h-36 border-[3px] border-neo-ink bg-white/10 animate-pulse shrink-0 snap-start" />
           ))}
         </div>
       ) : (
-        <div className="flex gap-4 overflow-x-auto pb-4 snap-x hide-scrollbar">
+        <div className="flex gap-4 overflow-x-auto pb-4 snap-x custom-scrollbar relative z-10">
           {recommendations?.map((rec, idx) => (
             <Link
               key={idx}
               href={`/dashboard?search=${encodeURIComponent(rec.name)}`}
-              className="group min-w-[280px] max-w-[280px] p-4 rounded-xl border border-[var(--glass-border)] bg-[var(--bg-surface-solid)] hover:border-accent-violet/40 hover:-translate-y-1 transition-all shrink-0 snap-start relative overflow-hidden flex flex-col"
+              className="group min-w-[280px] max-w-[280px] p-5 border-[3px] border-neo-ink bg-white hover:bg-neo-yellow hover:-translate-y-1 hover:translate-x-1 shadow-[4px_4px_0_#111111] hover:shadow-none transition-all shrink-0 snap-start relative flex flex-col"
             >
-              <div className="flex items-start justify-between mb-2">
-                <h3 className="font-heading font-bold text-[var(--text-primary)] pr-8">{rec.name}</h3>
-                <div className={`absolute top-4 right-4 p-1.5 rounded-lg border ${
+              <div className="flex items-start justify-between mb-3">
+                <h3 className="font-heading font-black text-xl text-neo-ink uppercase tracking-tight pr-8 line-clamp-2 leading-none">{rec.name}</h3>
+                <div className={`absolute top-4 right-4 w-8 h-8 flex items-center justify-center border-[2px] border-neo-ink shadow-[2px_2px_0_#111111] ${
                   rec.type === 'learn' 
-                    ? 'bg-accent-violet/10 border-accent-violet/20 text-accent-violet'
-                    : 'bg-accent-emerald/10 border-accent-emerald/20 text-accent-emerald'
+                    ? 'bg-neo-coral text-white'
+                    : 'bg-neo-green text-neo-ink'
                 }`}>
-                  {rec.type === 'learn' ? <BookOpen size={14} /> : <GraduationCap size={14} />}
+                  {rec.type === 'learn' ? <BookOpen size={16} strokeWidth={3} /> : <GraduationCap size={16} strokeWidth={3} />}
                 </div>
               </div>
               
-              <p className="text-xs text-[var(--text-muted)] mb-4 line-clamp-2 flex-1">
+              <p className="text-xs font-bold text-neo-ink/70 mb-4 line-clamp-2 flex-1">
                 {rec.reason}
               </p>
               
-              <div className="flex items-center gap-1.5 text-xs font-semibold mt-auto opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-accent-violet">
-                Find {rec.type === 'learn' ? 'teachers' : 'learners'} <ArrowRight size={12} />
+              <div className="flex items-center gap-2 text-xs font-heading font-black uppercase tracking-widest mt-auto opacity-80 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-neo-ink">
+                Find {rec.type === 'learn' ? 'teachers' : 'learners'} <ArrowRight size={14} strokeWidth={3} />
               </div>
             </Link>
           ))}
         </div>
       )}
-    </GlassCard>
+    </div>
   );
 }

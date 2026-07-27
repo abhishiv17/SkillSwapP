@@ -5,7 +5,6 @@ import { useQuery } from '@tanstack/react-query';
 import { BADGES, BADGE_MAP, RARITY_COLORS, MILESTONES } from '@/lib/badges';
 import { useUser } from '@/hooks/useUser';
 import { createClient } from '@/lib/supabase/client';
-import { GlassCard } from '@/components/shared/GlassCard';
 import { cn } from '@/lib/utils';
 import { Award, TrendingUp, Lock, Sparkles } from 'lucide-react';
 import { authFetch } from '@/lib/authFetch';
@@ -65,27 +64,29 @@ export function BadgesSection() {
   return (
     <div className="space-y-6">
       {/* Earned Badges */}
-      <GlassCard padding="lg">
-        <div className="flex items-center gap-2 mb-5">
-          <Award size={18} className="text-accent-amber" />
-          <h3 className="font-heading font-semibold text-sm uppercase tracking-wider text-accent-amber">
+      <div className="ss-card border-[3px] bg-white p-6 shadow-[6px_6px_0_#111111]">
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b-[3px] border-neo-ink">
+          <span className="w-8 h-8 flex items-center justify-center bg-neo-yellow border-[2px] border-neo-ink shadow-[2px_2px_0_#111111]">
+            <Award size={18} strokeWidth={3} className="text-neo-ink" />
+          </span>
+          <h3 className="font-heading font-black text-xl uppercase tracking-tight text-neo-ink">
             Badges Earned ({earnedBadges.length}/{BADGES.length})
           </h3>
         </div>
 
         {isLoading ? (
-          <div className="flex gap-3">
+          <div className="flex gap-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="w-16 h-16 rounded-2xl bg-[var(--bg-surface-solid)] animate-pulse" />
+              <div key={i} className="w-20 h-24 bg-neo-surface border-[3px] border-neo-ink shadow-[4px_4px_0_#111111] animate-pulse" />
             ))}
           </div>
         ) : earnedBadges.length === 0 ? (
-          <div className="text-center py-6">
-            <Sparkles size={32} className="mx-auto mb-2 text-[var(--text-muted)] opacity-30" />
-            <p className="text-sm text-[var(--text-muted)]">No badges yet. Complete sessions to earn your first!</p>
+          <div className="text-center py-8 bg-neo-surface border-[3px] border-neo-ink border-dashed">
+            <Sparkles size={32} strokeWidth={2} className="mx-auto mb-3 text-neo-ink/30" />
+            <p className="text-sm font-bold uppercase tracking-widest text-neo-ink/60">No badges yet. Complete sessions to earn your first!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-4">
             {earnedBadges.map((badge) => {
               const colors = RARITY_COLORS[badge.rarity];
               const earned = userBadges.find((b) => b.badge_id === badge.id);
@@ -93,21 +94,28 @@ export function BadgesSection() {
                 <div
                   key={badge.id}
                   className={cn(
-                    'group relative flex flex-col items-center p-3 rounded-2xl border transition-all duration-300 hover:scale-105 cursor-default',
-                    colors.bg, colors.border,
-                    colors.glow && `shadow-lg ${colors.glow}`
+                    'group relative flex flex-col items-center p-3 bg-white border-[3px] border-neo-ink transition-all duration-300 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] cursor-default',
+                    colors.bg && colors.bg.includes('amber') ? 'bg-neo-yellow' : 
+                    colors.bg && colors.bg.includes('violet') ? 'bg-neo-purple' : 
+                    colors.bg && colors.bg.includes('slate') ? 'bg-neo-surface' : 'bg-neo-green',
+                    colors.text && colors.text.includes('white') ? 'text-white' : 'text-neo-ink'
                   )}
                   title={`${badge.name} — ${badge.description}`}
                 >
-                  <span className="text-2xl mb-1">{badge.icon}</span>
-                  <span className="text-[10px] font-semibold text-[var(--text-primary)] text-center leading-tight">
+                  <span className="text-2xl mb-2 grayscale-[0.2] drop-shadow-sm">{badge.icon}</span>
+                  <span className={cn(
+                    "text-[10px] font-heading font-black text-center leading-tight uppercase tracking-tight line-clamp-2",
+                    colors.text && colors.text.includes('white') ? 'text-white' : 'text-neo-ink'
+                  )}>
                     {badge.name}
                   </span>
-                  <span className={cn('text-[9px] font-bold uppercase tracking-wider mt-0.5', colors.text)}>
+                  <span className={cn(
+                    'text-[8px] font-bold uppercase tracking-widest mt-1 px-1.5 py-0.5 border-[2px] border-neo-ink bg-white text-neo-ink'
+                  )}>
                     {badge.rarity}
                   </span>
                   {/* Tooltip on hover */}
-                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg bg-[var(--bg-surface-solid)] border border-[var(--glass-border)] text-[10px] text-[var(--text-muted)] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg z-10">
+                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-3 py-2 bg-neo-ink text-white font-bold text-[10px] uppercase tracking-widest whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-[4px_4px_0_var(--ss-purple)] z-10">
                     {badge.description}
                   </div>
                 </div>
@@ -119,25 +127,25 @@ export function BadgesSection() {
         {/* Locked badges preview */}
         {lockedBadges.length > 0 && (
           <>
-            <div className="flex items-center gap-2 mt-6 mb-3">
-              <Lock size={14} className="text-[var(--text-muted)]" />
-              <span className="text-xs font-medium text-[var(--text-muted)]">
-                {lockedBadges.length} badge{lockedBadges.length !== 1 ? 's' : ''} to unlock
+            <div className="flex items-center gap-2 mt-8 mb-4 border-t-[3px] border-neo-ink/20 pt-6">
+              <Lock size={16} strokeWidth={3} className="text-neo-ink/50" />
+              <span className="text-xs font-bold uppercase tracking-widest text-neo-ink/60">
+                {lockedBadges.length} BADGE{lockedBadges.length !== 1 ? 'S' : ''} TO UNLOCK
               </span>
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-4">
               {lockedBadges.map((badge) => (
                 <div
                   key={badge.id}
-                  className="group relative flex flex-col items-center p-3 rounded-2xl border border-[var(--glass-border)] bg-[var(--bg-surface-solid)] opacity-40 hover:opacity-70 transition-all cursor-default"
+                  className="group relative flex flex-col items-center p-3 bg-neo-surface border-[3px] border-neo-ink opacity-60 hover:opacity-100 transition-all cursor-default"
                   title={`${badge.name} — ${badge.description}`}
                 >
-                  <span className="text-2xl mb-1 grayscale">{badge.icon}</span>
-                  <span className="text-[10px] font-semibold text-[var(--text-muted)] text-center leading-tight">
+                  <span className="text-2xl mb-2 grayscale opacity-50">{badge.icon}</span>
+                  <span className="text-[9px] font-heading font-black text-neo-ink text-center leading-tight uppercase tracking-tight line-clamp-2">
                     {badge.name}
                   </span>
-                  <Lock size={8} className="mt-0.5 text-[var(--text-muted)]" />
-                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg bg-[var(--bg-surface-solid)] border border-[var(--glass-border)] text-[10px] text-[var(--text-muted)] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg z-10">
+                  <Lock size={10} strokeWidth={3} className="mt-1 text-neo-ink/40" />
+                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-3 py-2 bg-neo-ink text-white font-bold text-[10px] uppercase tracking-widest whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-[4px_4px_0_var(--ss-purple)] z-10">
                     {badge.description}
                   </div>
                 </div>
@@ -145,18 +153,20 @@ export function BadgesSection() {
             </div>
           </>
         )}
-      </GlassCard>
+      </div>
 
       {/* Milestones */}
-      <GlassCard padding="lg">
-        <div className="flex items-center gap-2 mb-5">
-          <TrendingUp size={18} className="text-accent-emerald" />
-          <h3 className="font-heading font-semibold text-sm uppercase tracking-wider text-accent-emerald">
+      <div className="ss-card border-[3px] bg-white p-6 shadow-[6px_6px_0_#111111]">
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b-[3px] border-neo-ink">
+          <span className="w-8 h-8 flex items-center justify-center bg-neo-green border-[2px] border-neo-ink shadow-[2px_2px_0_#111111]">
+            <TrendingUp size={18} strokeWidth={3} className="text-neo-ink" />
+          </span>
+          <h3 className="font-heading font-black text-xl uppercase tracking-tight text-neo-ink">
             Milestones
           </h3>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {MILESTONES.map((milestone) => {
             const value = milestoneValues[milestone.id] ?? 0;
             const nextThreshold = milestone.thresholds.find((t) => t > value) || milestone.thresholds[milestone.thresholds.length - 1];
@@ -171,58 +181,54 @@ export function BadgesSection() {
               <div
                 key={milestone.id}
                 className={cn(
-                  'p-4 rounded-xl border transition-all',
-                  allComplete
-                    ? 'border-accent-emerald/30 bg-accent-emerald/5'
-                    : 'border-[var(--glass-border)] bg-[var(--bg-surface-solid)]'
+                  'p-5 border-[3px] border-neo-ink transition-all shadow-[4px_4px_0_#111111]',
+                  allComplete ? 'bg-neo-green/20' : 'bg-white'
                 )}
               >
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">{milestone.icon}</span>
-                    <span className="text-sm font-semibold text-[var(--text-primary)]">{milestone.label}</span>
+                    <span className="text-xl mr-1">{milestone.icon}</span>
+                    <span className="text-sm font-heading font-black uppercase tracking-tight text-neo-ink">{milestone.label}</span>
                   </div>
                   <span className={cn(
-                    'text-xs font-bold',
-                    allComplete ? 'text-accent-emerald' : 'text-[var(--text-muted)]'
+                    'text-sm font-heading font-black',
+                    allComplete ? 'text-neo-green' : 'text-neo-ink'
                   )}>
                     {value}/{nextThreshold}
                   </span>
                 </div>
 
                 {/* Progress bar */}
-                <div className="w-full h-2 rounded-full bg-[var(--bg-surface)] overflow-hidden mb-2">
+                <div className="w-full h-4 bg-neo-surface border-[2px] border-neo-ink overflow-hidden mb-3 p-[1px]">
                   <div
                     className={cn(
-                      'h-full rounded-full transition-all duration-700 ease-out',
-                      allComplete
-                        ? 'bg-gradient-to-r from-accent-emerald to-green-400'
-                        : 'bg-gradient-to-r from-accent-violet to-accent-amber'
+                      'h-full transition-all duration-700 ease-out border-r-[2px] border-neo-ink',
+                      allComplete ? 'bg-neo-green' : 'bg-neo-purple'
                     )}
                     style={{ width: `${progress}%` }}
                   />
                 </div>
 
                 {/* Threshold dots */}
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 justify-between px-1">
                   {milestone.thresholds.map((threshold, i) => (
-                    <div key={threshold} className="flex items-center gap-1">
+                    <div key={threshold} className="flex items-center gap-1 flex-1">
                       <div
                         className={cn(
-                          'w-2 h-2 rounded-full transition-all',
+                          'w-2 h-2 border-[2px] transition-all shrink-0',
                           value >= threshold
-                            ? 'bg-accent-emerald scale-110'
-                            : 'bg-[var(--bg-surface)] border border-[var(--glass-border)]'
+                            ? 'bg-neo-green border-neo-ink scale-125'
+                            : 'bg-white border-neo-ink/30'
                         )}
                       />
                       <span className={cn(
-                        'text-[9px]',
-                        value >= threshold ? 'text-accent-emerald font-bold' : 'text-[var(--text-muted)]'
+                        'text-[8px] font-bold uppercase tracking-widest shrink-0',
+                        value >= threshold ? 'text-neo-ink' : 'text-neo-ink/40'
                       )}>
                         {threshold}
                       </span>
                       {i < milestone.thresholds.length - 1 && (
-                        <div className="w-2 h-px bg-[var(--glass-border)]" />
+                        <div className="w-full h-[2px] bg-neo-ink/20 mx-1" />
                       )}
                     </div>
                   ))}
@@ -231,7 +237,7 @@ export function BadgesSection() {
             );
           })}
         </div>
-      </GlassCard>
+      </div>
     </div>
   );
 }

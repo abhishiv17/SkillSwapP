@@ -1,16 +1,14 @@
 import type { Metadata, Viewport } from 'next';
-import { Sora, DM_Sans } from 'next/font/google';
-import { ThemeProvider } from '@/components/providers/ThemeProvider';
+import { Space_Grotesk, DM_Sans } from 'next/font/google';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { UserProvider } from '@/hooks/useUser';
-import { AuthRedirect } from '@/components/providers/AuthRedirect';
 import { Toaster } from 'sonner';
 import './globals.css';
 
-const sora = Sora({
+const space = Space_Grotesk({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800'],
-  variable: '--font-sora',
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-space',
   display: 'swap',
 });
 
@@ -29,7 +27,6 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#f8f6f0' },
-    { media: '(prefers-color-scheme: dark)', color: '#121413' },
   ],
 };
 
@@ -54,18 +51,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${sora.variable} ${dmSans.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${space.variable} ${dmSans.variable}`}>
       <body className="font-body antialiased" suppressHydrationWarning>
         <QueryProvider>
           <UserProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem={true}
-            >
-              {children}
-              <AuthRedirect />
-              <Toaster
+            {children}
+            <Toaster
                 position="top-center"
                 toastOptions={{
                   style: {
@@ -75,21 +66,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   },
                 }}
               />
-            </ThemeProvider>
           </UserProvider>
         </QueryProvider>
         
-        {/* PWA Service Worker Registration */}
+        {/* PWA Service Worker Registration & Dev Cache Cleanup */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').then(function(registration) {
-                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                  }, function(err) {
-                    console.log('ServiceWorker registration failed: ', err);
-                  });
+                  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                      for (let reg of registrations) { reg.unregister(); console.log('[SW] Unregistered in dev'); }
+                    });
+                    if (window.caches) {
+                      caches.keys().then(function(names) {
+                        for (let name of names) caches.delete(name);
+                      });
+                    }
+                  } else {
+                    navigator.serviceWorker.register('/sw.js');
+                  }
                 });
               }
             `,

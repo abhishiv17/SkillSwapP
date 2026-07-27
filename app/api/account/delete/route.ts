@@ -1,24 +1,12 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { headers } from 'next/headers';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/server';
 
 export async function DELETE() {
   try {
-    // Get the auth token from the request header
-    const headerStore = await headers();
-    const authHeader = headerStore.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
-
-    if (!token) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    }
-
-    // Verify the user with the token
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    // Verify the user with cookies using the server client
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
@@ -32,7 +20,7 @@ export async function DELETE() {
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
-    const adminClient = createClient(
+    const adminClient = createAdminClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       serviceKey
     );

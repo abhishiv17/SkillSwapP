@@ -8,7 +8,6 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { ROUTES } from '@/lib/constants';
 import { Search, Bell, Coins, UserPlus, Star, CalendarCheck, CheckCheck, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { LanguageSelector } from '@/components/shared/LanguageSelector';
 
 function timeAgo(dateStr: string): string {
@@ -16,25 +15,34 @@ function timeAgo(dateStr: string): string {
   const date = new Date(dateStr);
   const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-  if (seconds < 60) return 'just now';
+  if (seconds < 60) return 'JUST NOW';
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60) return `${minutes}M AGO`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return `${hours}H AGO`;
   const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  return `${days}D AGO`;
 }
 
 function getNotificationIcon(type: string) {
   switch (type) {
     case 'session_request':
-      return <UserPlus size={14} className="text-accent-violet" />;
+      return <UserPlus size={16} strokeWidth={2.5} className="text-neo-ink" />;
     case 'session_accepted':
-      return <CalendarCheck size={14} className="text-accent-emerald" />;
+      return <CalendarCheck size={16} strokeWidth={2.5} className="text-neo-ink" />;
     case 'review_received':
-      return <Star size={14} className="text-accent-amber" />;
+      return <Star size={16} strokeWidth={2.5} className="text-neo-ink" />;
     default:
-      return <Bell size={14} className="text-accent-violet" />;
+      return <Bell size={16} strokeWidth={2.5} className="text-neo-ink" />;
+  }
+}
+
+function getNotificationColor(type: string) {
+  switch (type) {
+    case 'session_request': return 'bg-neo-purple text-white';
+    case 'session_accepted': return 'bg-neo-green text-neo-ink';
+    case 'review_received': return 'bg-neo-yellow text-neo-ink';
+    default: return 'bg-white border-2 border-neo-ink';
   }
 }
 
@@ -50,30 +58,41 @@ export function TopBar() {
   const { profile } = useUser();
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotifications();
 
-  // Handle Search Input
   useEffect(() => {
+    let isMounted = true;
     if (searchQuery.trim().length > 1) {
       setShowSearchDropdown(true);
       const fetchResults = async () => {
         setIsSearching(true);
-        const supabase = await import('@/lib/supabase/client').then(m => m.createClient());
-        const { data } = await supabase
-          .from('profiles')
-          .select('id, username, full_name, college_name')
-          .or(`username.ilike.%${searchQuery}%,full_name.ilike.%${searchQuery}%`)
-          .limit(5);
-        setSearchResults(data || []);
-        setIsSearching(false);
+        try {
+          const supabase = await import('@/lib/supabase/client').then(m => m.createClient());
+          const { data } = await supabase
+            .from('profiles')
+            .select('id, username, full_name, college_name')
+            .or(`username.ilike.%${searchQuery}%,full_name.ilike.%${searchQuery}%`)
+            .limit(5);
+            
+          if (isMounted) {
+            setSearchResults(data || []);
+          }
+        } catch (err: any) {
+          console.error('Search error', err);
+        } finally {
+          if (isMounted) setIsSearching(false);
+        }
       };
-      const timeoutId = setTimeout(fetchResults, 300); // Debounce
-      return () => clearTimeout(timeoutId);
+      const timeoutId = setTimeout(fetchResults, 300);
+      return () => {
+        clearTimeout(timeoutId);
+        isMounted = false;
+      };
     } else {
       setShowSearchDropdown(false);
       setSearchResults([]);
     }
+    return () => { isMounted = false; };
   }, [searchQuery]);
 
-  // Click outside handlers
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
@@ -83,36 +102,34 @@ export function TopBar() {
         setShowSearchDropdown(false);
       }
     }
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const avatarUrl = `https://api.dicebear.com/9.x/avataaars/svg?seed=${profile?.username || 'User'}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
-
   return (
-    <header className="sticky top-0 z-30 glass border-b border-[var(--glass-border)] px-3 sm:px-6 py-3">
-      <div className="flex items-center justify-between gap-2 sm:gap-4">
+    <header className="sticky top-0 z-30 bg-neo-cream border-b-[3px] border-neo-ink px-4 sm:px-8 py-4 h-[76px] flex items-center">
+      <div className="flex items-center justify-between w-full gap-4 max-w-[1500px] mx-auto">
+        
         {/* Spacer for hamburger on mobile */}
-        <div className="w-10 lg:hidden shrink-0" />
+        <div className="w-12 lg:hidden shrink-0" />
 
-        {/* Search — hidden on very small screens, shows as icon on sm */}
-        <div className="relative flex-1 max-w-md hidden sm:block" ref={searchRef}>
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+        {/* Global Search */}
+        <div className="relative flex-1 max-w-[500px] hidden sm:block" ref={searchRef}>
+          <Search size={18} strokeWidth={2.5} className="absolute left-4 top-1/2 -translate-y-1/2 text-neo-ink" />
           <input
             type="text"
-            placeholder="Search students..."
+            placeholder="Search students, skills, resources..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => { if(searchQuery.length > 1) setShowSearchDropdown(true) }}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--bg-surface-solid)] border border-[var(--glass-border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] text-sm focus:outline-none focus:border-accent-violet/50 focus:ring-1 focus:ring-accent-violet/30 transition-all"
+            className="w-full pl-11 pr-4 h-[44px] rounded-md bg-white border-[2px] border-neo-ink text-neo-ink placeholder:text-neo-ink/50 text-sm font-bold focus:outline-none focus:ring-0 focus:border-neo-purple focus:shadow-[2px_2px_0_var(--ss-purple)] transition-all uppercase tracking-wide"
           />
           
           {/* Search Dropdown */}
           {showSearchDropdown && (
-            <div className="absolute top-full mt-2 w-full glass bg-[var(--bg-surface)] border border-[var(--glass-border)] rounded-xl shadow-2xl overflow-hidden z-50">
+            <div className="absolute top-full mt-3 w-full bg-neo-cream border-[3px] border-neo-ink rounded-md shadow-[6px_6px_0_#111111] overflow-hidden z-50">
               {isSearching ? (
-                <div className="p-4 text-center text-[var(--text-muted)] text-sm">Searching...</div>
+                <div className="p-4 text-center font-heading font-bold uppercase text-neo-ink">Searching...</div>
               ) : searchResults.length > 0 ? (
                 <div className="flex flex-col">
                   {searchResults.map((user) => (
@@ -120,40 +137,42 @@ export function TopBar() {
                       key={user.id} 
                       href={`/dashboard/user/${user.id}`}
                       onClick={() => setShowSearchDropdown(false)}
-                      className="flex items-center gap-3 p-3 hover:bg-[var(--glass-bg)] border-b border-[var(--glass-border)] last:border-b-0 transition-colors"
+                      className="flex items-center gap-3 p-3 hover:bg-neo-yellow border-b-[2px] border-neo-ink last:border-b-0 transition-colors"
                     >
                       <Image 
-                        src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${user.username || user.id}&backgroundColor=b6e3f4,c0aede,d1d4f9`} 
-                        alt={user.username || 'User Avatar'} width={32} height={32} className="rounded-full bg-[var(--bg-surface-solid)]" 
+                        src={`https://api.dicebear.com/9.x/bottts/svg?seed=${user.username || user.id}&backgroundColor=FFF9E9`} 
+                        alt={user.username || 'User Avatar'} width={36} height={36} className="rounded-md border-2 border-neo-ink bg-white" 
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{user.full_name || user.username}</p>
-                        <p className="text-[10px] text-[var(--text-muted)] truncate">@{user.username} • {user.college_name}</p>
+                        <p className="text-sm font-heading font-black uppercase text-neo-ink truncate">{user.full_name || user.username}</p>
+                        <p className="text-[10px] font-bold text-neo-ink/60 truncate uppercase">@{user.username} • {user.college_name}</p>
                       </div>
                     </Link>
                   ))}
                 </div>
               ) : (
-                <div className="p-4 text-center text-[var(--text-muted)] text-sm">No students found</div>
+                <div className="p-4 text-center font-heading font-bold uppercase text-neo-ink">No students found</div>
               )}
             </div>
           )}
         </div>
 
-        {/* Right side */}
-        <div className="flex items-center gap-1.5 sm:gap-3 ml-auto">
-          {/* Language Selector — hidden on mobile */}
+        {/* Right side controls */}
+        <div className="flex items-center gap-3 ml-auto shrink-0">
+          
           <div className="hidden md:block">
+            {/* We will wrap LanguageSelector slightly or rely on its own styling, 
+                ideally applying some neo-brutalist wrapper if it's external, but we'll leave it as is if it's shared. */}
             <LanguageSelector />
           </div>
-          
-          {/* Theme toggle */}
-          <ThemeToggle />
 
           {/* Credits */}
-          <Link href={ROUTES.dashboard} className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-xl bg-accent-amber/10 border border-accent-amber/20 hover:bg-accent-amber/20 transition-all">
-            <Coins size={16} className="text-accent-amber" />
-            <span className="text-sm font-heading font-semibold text-accent-amber">
+          <Link 
+            href={ROUTES.dashboard} 
+            className="flex items-center justify-center gap-2 px-4 h-[44px] rounded-md bg-neo-yellow border-[2px] border-neo-ink ss-button-press"
+          >
+            <Coins size={18} strokeWidth={2.5} className="text-neo-ink" />
+            <span className="text-sm font-heading font-black text-neo-ink mt-0.5">
               {profile?.credits ?? 0}
             </span>
           </Link>
@@ -162,57 +181,54 @@ export function TopBar() {
           <div className="relative" ref={notificationRef}>
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg)] transition-all"
+              className={cn(
+                "relative flex items-center justify-center w-[44px] h-[44px] rounded-md border-[2px] border-neo-ink ss-button-press transition-colors",
+                showNotifications || unreadCount > 0 ? "bg-neo-purple text-white" : "bg-white text-neo-ink hover:bg-neo-yellow"
+              )}
               aria-label="Notifications"
             >
-              <Bell size={18} />
+              <Bell size={18} strokeWidth={2.5} />
               {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-accent-coral text-white text-[10px] font-bold px-1 border-2 border-[var(--bg-base)]">
+                <span className="absolute -top-2 -right-2 min-w-[20px] h-[20px] flex items-center justify-center rounded-full bg-neo-coral text-neo-ink text-[11px] font-black px-1 border-2 border-neo-ink">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
             </button>
 
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-80 glass bg-[var(--bg-surface)] border border-[var(--glass-border)] rounded-xl shadow-2xl overflow-hidden z-50">
+              <div className="absolute right-0 mt-3 w-[calc(100vw-2rem)] sm:w-[380px] max-w-[380px] bg-neo-cream border-[3px] border-neo-ink rounded-md shadow-[6px_6px_0_#111111] overflow-hidden z-50 flex flex-col max-h-[80vh]">
+                
                 {/* Header */}
-                <div className="px-4 py-3 border-b border-[var(--glass-border)] flex justify-between items-center">
+                <div className="px-4 py-3 border-b-[3px] border-neo-ink bg-white flex justify-between items-center shrink-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-[var(--text-primary)]">Notifications</h3>
+                    <h3 className="font-heading font-black text-base text-neo-ink uppercase tracking-tight">Notifications</h3>
                     {unreadCount > 0 && (
-                      <span className="px-1.5 py-0.5 rounded-full bg-accent-violet/10 text-accent-violet text-[10px] font-bold">
+                      <span className="px-2 py-0.5 rounded-sm bg-neo-purple text-white text-[10px] font-bold uppercase">
                         {unreadCount} new
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     {unreadCount > 0 && (
-                      <button
-                        onClick={markAllAsRead}
-                        className="text-[10px] text-accent-violet hover:underline flex items-center gap-1 font-medium"
-                      >
-                        <CheckCheck size={12} /> Read all
+                      <button onClick={markAllAsRead} className="text-xs font-bold text-neo-ink hover:text-neo-purple uppercase flex items-center gap-1">
+                        <CheckCheck size={14} strokeWidth={3} /> Read all
                       </button>
                     )}
                     {notifications.length > 0 && (
-                      <button
-                        onClick={clearAll}
-                        className="text-[10px] text-[var(--text-muted)] hover:text-red-500 transition-colors"
-                        title="Clear all"
-                      >
-                        <Trash2 size={12} />
+                      <button onClick={clearAll} className="text-neo-ink hover:text-neo-coral transition-colors" title="Clear all">
+                        <Trash2 size={16} strokeWidth={2.5} />
                       </button>
                     )}
                   </div>
                 </div>
 
                 {/* Notifications list */}
-                <div className="max-h-72 overflow-y-auto">
+                <div className="overflow-y-auto flex-1">
                   {notifications.length === 0 ? (
-                    <div className="px-4 py-10 text-center text-sm text-[var(--text-muted)]">
-                      <Bell size={28} className="mx-auto mb-2 opacity-15" />
-                      <p>No notifications yet</p>
-                      <p className="text-[10px] mt-1 opacity-60">They&apos;ll appear here in real-time</p>
+                    <div className="px-4 py-12 text-center text-neo-ink flex flex-col items-center justify-center bg-white">
+                      <Bell size={32} strokeWidth={2} className="mb-3 opacity-30" />
+                      <p className="font-heading font-bold uppercase text-lg">No notifications yet</p>
+                      <p className="text-xs font-medium mt-1 opacity-70">They will appear here in real-time</p>
                     </div>
                   ) : (
                     notifications.map((notification) => (
@@ -224,37 +240,32 @@ export function TopBar() {
                           setShowNotifications(false);
                         }}
                         className={cn(
-                          'flex items-start gap-3 px-4 py-3 hover:bg-[var(--glass-bg)] transition-colors border-b border-[var(--glass-border)] last:border-b-0',
-                          !notification.is_read && 'bg-accent-violet/[0.03]'
+                          'flex items-start gap-4 px-4 py-4 transition-colors border-b-[2px] border-neo-ink last:border-b-0',
+                          !notification.is_read ? 'bg-neo-purple/5 hover:bg-neo-purple/10' : 'bg-white hover:bg-neo-cream'
                         )}
                       >
                         {/* Icon */}
                         <div className={cn(
-                          'mt-0.5 w-7 h-7 rounded-full flex items-center justify-center shrink-0',
-                          !notification.is_read ? 'bg-accent-violet/10' : 'bg-[var(--bg-surface-solid)]'
+                          'w-10 h-10 rounded-md flex items-center justify-center shrink-0 border-[2px] border-neo-ink shadow-[2px_2px_0_#111111]',
+                          getNotificationColor(notification.type)
                         )}>
                           {getNotificationIcon(notification.type)}
                         </div>
 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
-                          <p className={cn(
-                            'text-xs leading-relaxed',
-                            !notification.is_read
-                              ? 'text-[var(--text-primary)] font-medium'
-                              : 'text-[var(--text-muted)]'
-                          )}>
-                            <span className="font-semibold">{notification.title}</span>{' '}
+                          <p className="text-sm font-medium text-neo-ink leading-snug">
+                            <span className="font-bold">{notification.title}</span>{' '}
                             {notification.message}
                           </p>
-                          <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
+                          <p className="text-[10px] font-bold text-neo-ink/50 mt-1 uppercase tracking-wider">
                             {timeAgo(notification.created_at)}
                           </p>
                         </div>
 
-                        {/* Unread dot */}
+                        {/* Unread indicator */}
                         {!notification.is_read && (
-                          <span className="mt-2 w-2 h-2 rounded-full bg-accent-violet shrink-0" />
+                          <div className="w-3 h-3 rounded-full bg-neo-purple border-[2px] border-neo-ink shrink-0 mt-1" />
                         )}
                       </Link>
                     ))
@@ -264,16 +275,6 @@ export function TopBar() {
             )}
           </div>
 
-          {/* User avatar — hidden on mobile (accessible via bottom nav Profile) */}
-          <Link href={ROUTES.profile} className="hidden sm:block w-8 h-8 rounded-full overflow-hidden hover:opacity-80 transition-opacity">
-            <Image
-              src={avatarUrl}
-              alt={profile?.username || 'User'}
-              width={32}
-              height={32}
-              className="w-full h-full bg-[var(--bg-surface-solid)] object-cover"
-            />
-          </Link>
         </div>
       </div>
     </header>

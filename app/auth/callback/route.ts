@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -7,48 +8,48 @@ export async function GET(request: Request) {
   const next = searchParams.get('next') ?? '/dashboard';
 
   if (code) {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
-    }
-    console.error('Auth Callback Error (code):', error);
-  }
+    const cookieStore = await cookies();
 
-  // Handle Magic Links via token_hash (New Supabase Default)
-  const token_hash = searchParams.get('token_hash');
-  const type = searchParams.get('type') as any;
-
-  if (token_hash && type) {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.verifyOtp({ token_hash, type });
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
-    }
-    console.error('Auth Callback Error (token_hash):', error);
-  }
-
-  // If neither code nor token_hash is in the query params, it might be an implicit flow (hash based).
-  // Return a client-side script to handle hash parsing.
-  return new NextResponse(
-    `
-    <html>
-      <head>
-        <script>
-          window.onload = function() {
-            var hash = window.location.hash;
-            if (hash && hash.includes('access_token=')) {
-              // The Supabase client on the login or dashboard page will parse this automatically.
-              window.location.replace('/dashboard' + hash);
-            } else {
-              window.location.replace('/login?error=auth_failed_invalid_link');
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              );
+            } catch {
+              // Cookie setting can fail from Server Components — safe to ignore
             }
-          }
-        </script>
-      </head>
-      <body>Authenticating...</body>
-    </html>
-    `,
-    { headers: { 'Content-Type': 'text/html' } }
-  );
+          },
+        },
+      }
+    );
+
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (!error) {
+      // Force a redirect that the browser follows — sets auth cookies in the process
+      const forwardedHost = request.headers.get('x-forwarded-host');
+      const isLocalEnv = process.env.NODE_ENV === 'development';
+
+      if (isLocalEnv) {
+        return NextResponse.redirect(`${origin}${next}`);
+      } else if (forwardedHost) {
+        return NextResponse.redirect(`https://${forwardedHost}${next}`);
+      } else {
+        return NextResponse.redirect(`${origin}${next}`);
+      }
+    }
+
+    console.error('Auth callback error:', error.message);
+  }
+
+  // No code or exchange failed — redirect to login with error
+  return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`);
 }

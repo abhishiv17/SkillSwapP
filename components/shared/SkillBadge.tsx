@@ -1,5 +1,4 @@
 import { cn } from '@/lib/utils';
-
 import { X } from 'lucide-react';
 
 interface SkillBadgeProps {
@@ -11,29 +10,29 @@ interface SkillBadgeProps {
 }
 
 const variantStyles = {
-  default: 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-soft)]',
-  have: 'bg-section-sage text-accent-matcha border-accent-matcha/20',
-  want: 'bg-section-sand text-accent-mustard border-accent-mustard/20',
-  match: 'bg-section-rose text-accent-rose border-accent-rose/20',
+  default: 'bg-white text-neo-ink border-neo-ink',
+  have: 'bg-neo-green text-neo-ink border-neo-ink',
+  want: 'bg-neo-purple text-white border-neo-ink',
+  match: 'bg-neo-coral text-white border-neo-ink',
 };
 
 const sizeStyles = {
-  sm: 'px-2.5 py-0.5 text-[11px] gap-1',
-  md: 'px-3.5 py-1 text-[13px] gap-1.5',
+  sm: 'px-2 py-1 text-[10px] gap-1',
+  md: 'px-3 py-1.5 text-xs gap-1.5',
 };
 
 export function SkillBadge({ skill, variant = 'default', size = 'sm', className, onRemove }: SkillBadgeProps) {
   return (
-    <span className={cn('inline-flex items-center rounded-lg border font-medium tracking-wide', variantStyles[variant], sizeStyles[size], className)}>
+    <span className={cn('inline-flex items-center border-[2px] font-heading font-black uppercase tracking-widest shadow-[2px_2px_0_#111111]', variantStyles[variant], sizeStyles[size], className)}>
       {skill}
       {onRemove && (
         <button
           type="button"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRemove(); }}
-          className="hover:opacity-70 transition-opacity ml-0.5 focus:outline-none"
+          className="hover:scale-110 active:scale-95 transition-transform ml-1 focus:outline-none"
           aria-label={`Remove ${skill}`}
         >
-          <X size={size === 'sm' ? 12 : 14} />
+          <X size={size === 'sm' ? 12 : 14} strokeWidth={3} />
         </button>
       )}
     </span>

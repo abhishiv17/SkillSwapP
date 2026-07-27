@@ -44,7 +44,7 @@ export default function EditForumPostPage() {
         // Security check: only author can edit
         if (user && data.author_id !== user.id) {
           toast.error('You are not authorized to edit this post');
-          router.push(`/dashboard/forum/${id}`);
+          router.push(`/dashboard/campus/${id}`);
           return;
         }
 
@@ -54,7 +54,7 @@ export default function EditForumPostPage() {
         setTagsInput(data.tags?.join(', ') || '');
       } catch (err: any) {
         toast.error('Failed to load post');
-        router.push('/dashboard/forum');
+        router.push('/dashboard/campus');
       } finally {
         setIsLoading(false);
       }
@@ -87,7 +87,7 @@ export default function EditForumPostPage() {
       if (error) throw error;
 
       toast.success('Discussion updated!');
-      router.push(`/dashboard/forum/${id}`);
+      router.push(`/dashboard/campus/${id}`);
     } catch (err: any) {
       toast.error(err.message || 'Failed to update post');
       setIsSubmitting(false);
@@ -107,7 +107,7 @@ export default function EditForumPostPage() {
       {/* Header */}
       <div>
         <Link 
-          href={`/dashboard/forum/${id}`} 
+          href={`/dashboard/campus/${id}`} 
           className="inline-flex items-center gap-2 text-sm font-medium text-[var(--text-muted)] hover:text-accent-violet transition-colors mb-4"
         >
           <ArrowLeft size={16} /> Back to Discussion
@@ -185,7 +185,7 @@ export default function EditForumPostPage() {
           {/* Actions */}
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--glass-border)]">
             <Link 
-              href={`/dashboard/forum/${id}`}
+              href={`/dashboard/campus/${id}`}
               className="px-5 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors"
             >
               Cancel

@@ -51,7 +51,7 @@ export default function NewForumPostPage() {
       if (error) throw error;
 
       toast.success('Discussion created!');
-      router.push(`/dashboard/forum/${data.id}`);
+      router.push(`/dashboard/campus/${data.id}`);
     } catch (err: any) {
       toast.error(err.message || 'Failed to create post');
       setIsSubmitting(false);
@@ -63,7 +63,7 @@ export default function NewForumPostPage() {
       {/* Header */}
       <div>
         <Link 
-          href="/dashboard/forum" 
+          href="/dashboard/campus" 
           className="inline-flex items-center gap-2 text-sm font-medium text-[var(--text-muted)] hover:text-accent-violet transition-colors mb-4"
         >
           <ArrowLeft size={16} /> Back to Forum
@@ -141,7 +141,7 @@ export default function NewForumPostPage() {
           {/* Actions */}
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--glass-border)]">
             <Link 
-              href="/dashboard/forum"
+              href="/dashboard/campus"
               className="px-5 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors"
             >
               Cancel

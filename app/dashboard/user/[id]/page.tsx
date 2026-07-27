@@ -225,7 +225,7 @@ export default function UserProfilePage() {
 
   const offeredSkills = skills.filter(s => s.type === 'offered');
   const desiredSkills = skills.filter(s => s.type === 'desired');
-  const avatarUrl = `https://api.dicebear.com/9.x/avataaars/svg?seed=${userProfile.username || 'User Avatar'}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+  const avatarUrl = `https://api.dicebear.com/9.x/bottts/svg?seed=${userProfile.username || 'User Avatar'}&backgroundColor=FFF9E9`;
   const isSelf = currentUser?.id === id;
 
   return (

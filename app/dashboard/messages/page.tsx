@@ -1,16 +1,18 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { GlassCard } from '@/components/shared/GlassCard';
 import { useUser } from '@/hooks/useUser';
 import { createClient } from '@/lib/supabase/client';
-import { MessageSquare, Send, Paperclip, Mic, Image as ImageIcon, FileText, UserPlus, Check, X, Play, Loader2 } from 'lucide-react';
+import { MessageSquare, Send, Paperclip, Mic, Image as ImageIcon, FileText, UserPlus, Check, X, Play, Loader2, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import Image from 'next/image';
+import { PageHeader } from '@/components/dashboard/ui/PageHeader';
+import { Button } from '@/components/dashboard/ui/Button';
 
 export default function MessagesPage() {
   const { profile } = useUser();
+  const [supabase] = useState(() => createClient());
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'messages' | 'requests'>('messages');
   const [inputText, setInputText] = useState('');
@@ -30,16 +32,14 @@ export default function MessagesPage() {
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
-  // --- Voice Recording Logic ---
   const startRecording = async () => {
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        toast.error('Voice recording requires a secure connection (HTTPS or localhost). Please use localhost:3000 to test this feature.');
+        toast.error('Voice recording requires a secure connection.');
         return;
       }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -64,7 +64,7 @@ export default function MessagesPage() {
         setRecordingDuration((prev) => prev + 1);
       }, 1000);
     } catch (err: any) {
-      toast.error('Microphone access denied or not available. Error: ' + err.message);
+      toast.error('Microphone access denied. Error: ' + err.message);
       console.error(err);
     }
   };
@@ -78,7 +78,6 @@ export default function MessagesPage() {
     }
   };
 
-  // --- File Upload Logic ---
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
@@ -88,9 +87,7 @@ export default function MessagesPage() {
 
   const handleFileUpload = async (file: File | Blob, fileName: string, fileType: string) => {
     if (!profile) return toast.error('You must be logged in.');
-    
     setIsUploading(true);
-    const supabase = createClient();
     const filePath = `${profile.id}/${Date.now()}_${fileName}`;
 
     try {
@@ -104,7 +101,6 @@ export default function MessagesPage() {
         .from('message_attachments')
         .getPublicUrl(filePath);
 
-      // We don't append to mock UI anymore, we insert into the real DB
       const otherUserId = activeChats.find(c => c.id === selectedChat)?.requester_id === profile.id 
         ? activeChats.find(c => c.id === selectedChat)?.receiver_id 
         : activeChats.find(c => c.id === selectedChat)?.requester_id;
@@ -128,14 +124,12 @@ export default function MessagesPage() {
     }
   };
 
-  // Real Data States
   const [connections, setConnections] = useState<any[]>([]);
   const [loadingChats, setLoadingChats] = useState(true);
 
   const pendingRequests = connections.filter(c => c.receiver_id === profile?.id && c.status === 'pending');
   const activeChats = connections.filter(c => c.status === 'accepted');
 
-  // Refs for realtime listeners to access current state without triggering re-renders
   const selectedChatRef = useRef(selectedChat);
   const connectionsRef = useRef(connections);
 
@@ -147,9 +141,7 @@ export default function MessagesPage() {
   useEffect(() => {
     async function loadConnections() {
       if (!profile?.id) return;
-      const supabase = createClient();
       
-      // Fetch connections WITHOUT FK joins (connections FK → auth.users, not profiles)
       const { data: rawConnections, error } = await supabase
         .from('connections')
         .select('id, status, requester_id, receiver_id, created_at, updated_at')
@@ -157,17 +149,14 @@ export default function MessagesPage() {
         .order('updated_at', { ascending: false });
 
       if (error || !rawConnections) {
-        console.error('[Messages] Failed to load connections:', error);
         setLoadingChats(false);
         return;
       }
 
-      // Collect all unique peer IDs
       const peerIds = Array.from(new Set(
         rawConnections.flatMap(c => [c.requester_id, c.receiver_id]).filter(id => id !== profile.id)
       ));
 
-      // Fetch profiles for all peers in one go
       let profileMap: Record<string, any> = {};
       if (peerIds.length > 0) {
         const { data: profiles } = await supabase
@@ -178,7 +167,6 @@ export default function MessagesPage() {
         profiles?.forEach(p => { profileMap[p.id] = p; });
       }
 
-      // Attach profile objects as `requester` and `receiver` for downstream rendering
       const enrichedConnections = rawConnections.map(c => ({
         ...c,
         requester: c.requester_id === profile.id
@@ -195,12 +183,9 @@ export default function MessagesPage() {
     loadConnections();
   }, [profile?.id]);
 
-  // Presence and Realtime Messages
   useEffect(() => {
     if (!profile?.id) return;
-    const supabase = createClient();
     
-    // Subscribe to Presence
     const room = supabase.channel('online_users');
     room.on('presence', { event: 'sync' }, () => {
       const newState = room.presenceState();
@@ -215,7 +200,6 @@ export default function MessagesPage() {
       }
     });
 
-    // Subscribe to new messages globally
     const realtimeSub = supabase.channel('messages_and_connections')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
         const newMessage = payload.new;
@@ -226,7 +210,6 @@ export default function MessagesPage() {
            const chat = currentConnections.find((c: any) => c.id === currentSelectedChat);
            const otherUserId = chat?.requester_id === profile.id ? chat?.receiver_id : chat?.requester_id;
 
-           // Only append to chatMessages if it belongs to the active chat
            if (
              (newMessage.sender_id === profile.id && newMessage.receiver_id === otherUserId) ||
              (newMessage.sender_id === otherUserId && newMessage.receiver_id === profile.id)
@@ -237,7 +220,7 @@ export default function MessagesPage() {
                });
                
                if (newMessage.receiver_id === profile.id) {
-                  supabase.from('messages').update({ is_read: true, read_at: new Date().toISOString() }).eq('id', newMessage.id).then();
+                  supabase.from('messages').update({ is_read: true, read_at: new Date().toISOString() }).eq('id', newMessage.id).then().catch(console.error);
                }
            }
         }
@@ -248,7 +231,6 @@ export default function MessagesPage() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'connections' }, async (payload) => {
          const newConn = payload.new as any;
          if (newConn.requester_id === profile.id || newConn.receiver_id === profile.id) {
-            // Fetch the peer's profile manually (no FK join)
             const peerId = newConn.requester_id === profile.id ? newConn.receiver_id : newConn.requester_id;
             const { data: peerProfile } = await supabase
               .from('profiles')
@@ -290,15 +272,14 @@ export default function MessagesPage() {
     };
   }, [profile?.id]);
 
-  // Fetch messages for selected chat
   useEffect(() => {
     async function loadMessages() {
       if (!selectedChat || !profile?.id) return;
-      const chat = activeChats.find(c => c.id === selectedChat);
+      const currentConnections = connectionsRef.current;
+      const chat = currentConnections.find(c => c.id === selectedChat);
       if (!chat) return;
       const otherUserId = chat.requester_id === profile.id ? chat.receiver_id : chat.requester_id;
       
-      const supabase = createClient();
       const { data } = await supabase
         .from('messages')
         .select('*')
@@ -307,7 +288,6 @@ export default function MessagesPage() {
         
       if (data) {
         setChatMessages(data);
-        // Mark unread messages from them as read
         const unreadIds = data.filter(m => m.receiver_id === profile.id && !m.is_read).map(m => m.id);
         if (unreadIds.length > 0) {
            await supabase.from('messages').update({ is_read: true, read_at: new Date().toISOString() }).in('id', unreadIds);
@@ -315,14 +295,12 @@ export default function MessagesPage() {
       }
     }
     loadMessages();
-  }, [selectedChat, profile?.id, connections]);
+  }, [selectedChat, profile?.id]);
 
   const handleAcceptRequest = async (connectionId: string) => {
-    const supabase = createClient();
     const { error } = await supabase.from('connections').update({ status: 'accepted' }).eq('id', connectionId);
     if (!error) {
       setConnections(prev => prev.map(c => c.id === connectionId ? { ...c, status: 'accepted' } : c));
-      
       const req = pendingRequests.find(r => r.id === connectionId);
       if (req && req.requester_id) {
          await supabase.from('notifications').insert({
@@ -333,16 +311,13 @@ export default function MessagesPage() {
             link: `/dashboard/messages`
          });
       }
-      
       toast.success('Request accepted! You can now message each other.');
-      // Auto-switch to messages tab and select the newly accepted chat
       setActiveTab('messages');
       setSelectedChat(connectionId);
     } else toast.error('Failed to accept request.');
   };
 
   const handleDeclineRequest = async (connectionId: string) => {
-    const supabase = createClient();
     const { error } = await supabase.from('connections').delete().eq('id', connectionId);
     if (!error) {
       setConnections(prev => prev.filter(c => c.id !== connectionId));
@@ -356,7 +331,6 @@ export default function MessagesPage() {
     if (!chat) return;
     const otherUserId = chat.requester_id === profile.id ? chat.receiver_id : chat.requester_id;
 
-    const supabase = createClient();
     const { error } = await supabase.from('messages').insert({
       sender_id: profile.id,
       receiver_id: otherUserId,
@@ -367,37 +341,40 @@ export default function MessagesPage() {
     else setInputText('');
   };
 
-
   return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-page-in">
-      <div>
-        <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mb-1">Direct Messages</h1>
-        <p className="text-sm text-[var(--text-muted)]">Connect and share resources with your peers</p>
-      </div>
+    <div className="max-w-[1200px] mx-auto space-y-8 animate-page-in h-[calc(100vh-140px)] flex flex-col">
+      <PageHeader 
+        title="Direct Messages"
+        subtitle="Connect and share resources with your peers"
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 h-[calc(100dvh-200px)] sm:h-[650px]">
-        {/* Left Sidebar: Chat List — hidden on mobile when a chat is selected */}
-        <GlassCard padding="none" className={cn('md:col-span-1 flex flex-col overflow-hidden', selectedChat ? 'hidden md:flex' : 'flex')}>
-          <div className="p-4 border-b border-[var(--glass-border)] bg-[var(--bg-surface-solid)]">
-            <div className="flex bg-[var(--glass-bg)] p-1 rounded-xl border border-[var(--glass-border)]">
-              <button 
-                onClick={() => setActiveTab('messages')}
-                className={`flex-1 text-xs font-medium py-1.5 rounded-lg transition-all ${activeTab === 'messages' ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}
-              >
-                Messages
-              </button>
-              <button 
-                onClick={() => setActiveTab('requests')}
-                className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-1.5 rounded-lg transition-all ${activeTab === 'requests' ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}
-              >
-                Requests {pendingRequests.length > 0 && <span className="bg-accent-coral text-white text-[9px] px-1.5 py-0.5 rounded-full">{pendingRequests.length}</span>}
-              </button>
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-0 h-full border-[4px] border-neo-ink bg-white shadow-[6px_6px_0_#111111] overflow-hidden flex-1 min-h-[400px]">
+        {/* Left Sidebar: Chat List */}
+        <div className={cn('md:col-span-1 flex flex-col border-r-0 md:border-r-[4px] border-neo-ink bg-neo-surface', selectedChat ? 'hidden md:flex' : 'flex')}>
+          <div className="p-4 border-b-[4px] border-neo-ink bg-neo-cream flex gap-2">
+            <button 
+              onClick={() => setActiveTab('messages')}
+              className={cn(
+                "flex-1 font-heading font-black text-sm uppercase tracking-widest py-3 border-[2px] border-neo-ink transition-all",
+                activeTab === 'messages' ? "bg-neo-purple text-white shadow-[3px_3px_0_#111111]" : "bg-white text-neo-ink opacity-70 hover:opacity-100"
+              )}
+            >
+              Chats
+            </button>
+            <button 
+              onClick={() => setActiveTab('requests')}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 font-heading font-black text-sm uppercase tracking-widest py-3 border-[2px] border-neo-ink transition-all",
+                activeTab === 'requests' ? "bg-neo-yellow text-neo-ink shadow-[3px_3px_0_#111111]" : "bg-white text-neo-ink opacity-70 hover:opacity-100"
+              )}
+            >
+              Reqs {pendingRequests.length > 0 && <span className="bg-neo-coral text-white text-[10px] px-2 py-0.5 rounded-full border-2 border-neo-ink shadow-[1px_1px_0_#111111]">{pendingRequests.length}</span>}
+            </button>
           </div>
           
           <div className="flex-1 overflow-y-auto">
             {loadingChats ? (
-              <div className="p-4 text-center text-[var(--text-muted)] text-sm">Loading...</div>
+              <div className="p-8 text-center text-neo-ink font-bold uppercase tracking-widest animate-pulse">Loading...</div>
             ) : activeTab === 'messages' ? (
               activeChats.length > 0 ? activeChats.map((chat) => {
                 const otherUser = chat.requester_id === profile?.id ? chat.receiver : chat.requester;
@@ -405,137 +382,130 @@ export default function MessagesPage() {
                   <button
                     key={chat.id}
                     onClick={() => setSelectedChat(chat.id)}
-                    className={`w-full flex items-start gap-3 p-4 border-b border-[var(--glass-border)] transition-colors text-left relative ${
-                      selectedChat === chat.id ? 'bg-accent-violet/10' : 'hover:bg-[var(--glass-bg)]'
-                    }`}
+                    className={cn(
+                      "w-full flex items-center gap-4 p-4 border-b-[2px] border-neo-ink transition-colors text-left relative",
+                      selectedChat === chat.id ? 'bg-neo-yellow/30' : 'hover:bg-neo-cream/50'
+                    )}
                   >
                     <div className="relative shrink-0">
                       <Image 
-                        src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${otherUser?.username || 'user'}&backgroundColor=b6e3f4,c0aede,d1d4f9`} 
-                        alt="Avatar" width={40} height={40} className="rounded-full bg-[var(--bg-surface-solid)]" 
+                        src={`https://api.dicebear.com/9.x/bottts/svg?seed=${otherUser?.username || 'user'}&backgroundColor=FFF9E9`} 
+                        alt="Avatar" width={48} height={48} className="rounded-md border-[2px] border-neo-ink bg-white shadow-[2px_2px_0_#111111]" 
                       />
                       {onlineUsers.has(otherUser?.id) && (
-                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></div>
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-neo-green border-2 border-neo-ink rounded-full shadow-[1px_1px_0_#111111]" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-baseline mb-1">
-                        <span className="font-medium text-sm text-[var(--text-primary)] truncate">{otherUser?.full_name || otherUser?.username}</span>
-                      </div>
-                      <p className="text-xs text-[var(--text-secondary)] truncate">Connected!</p>
+                      <span className="font-heading font-black text-neo-ink text-base uppercase tracking-tight block truncate">{otherUser?.full_name || otherUser?.username}</span>
+                      <p className="text-[10px] font-bold text-neo-ink/60 uppercase">Connected</p>
                     </div>
                   </button>
                 );
-              }) : <div className="p-4 text-center text-[var(--text-muted)] text-sm">No active chats</div>
+              }) : <div className="p-8 text-center text-neo-ink/60 font-bold uppercase tracking-widest text-sm">No Active Chats</div>
             ) : (
               pendingRequests.length > 0 ? pendingRequests.map((req) => (
-                <div key={req.id} className="p-4 border-b border-[var(--glass-border)] hover:bg-[var(--glass-bg)] transition-colors">
-                  <div className="flex items-start gap-3 mb-3">
+                <div key={req.id} className="p-4 border-b-[2px] border-neo-ink bg-neo-yellow/10">
+                  <div className="flex items-center gap-4 mb-4">
                     <Image 
-                      src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${req.requester?.username || 'user'}&backgroundColor=b6e3f4,c0aede,d1d4f9`} 
-                      alt="Avatar" width={40} height={40} className="rounded-full bg-[var(--bg-surface-solid)] shrink-0" 
+                      src={`https://api.dicebear.com/9.x/bottts/svg?seed=${req.requester?.username || 'user'}&backgroundColor=FFF9E9`} 
+                      alt="Avatar" width={48} height={48} className="rounded-md border-[2px] border-neo-ink bg-white shadow-[2px_2px_0_#111111] shrink-0" 
                     />
                     <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-baseline mb-0.5">
-                        <span className="font-medium text-sm text-[var(--text-primary)] truncate">{req.requester?.full_name || req.requester?.username}</span>
-                      </div>
-                      <p className="text-[10px] text-[var(--text-muted)] mb-1">{req.requester?.college_name}</p>
-                      <p className="text-xs text-[var(--text-secondary)] line-clamp-2">Wants to connect with you.</p>
+                      <span className="font-heading font-black text-neo-ink text-base uppercase tracking-tight block truncate">{req.requester?.full_name || req.requester?.username}</span>
+                      <p className="text-[10px] font-bold text-neo-ink/60 uppercase truncate">{req.requester?.college_name}</p>
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => handleAcceptRequest(req.id)} className="flex-1 bg-accent-violet text-white text-xs font-medium py-1.5 rounded-lg hover:opacity-90 transition-opacity">
-                      Accept
-                    </button>
-                    <button onClick={() => handleDeclineRequest(req.id)} className="flex-1 bg-[var(--bg-surface)] border border-[var(--glass-border)] text-[var(--text-primary)] text-xs font-medium py-1.5 rounded-lg hover:bg-[var(--glass-bg)] transition-colors">
-                      Decline
-                    </button>
+                    <Button variant="success" size="sm" onClick={() => handleAcceptRequest(req.id)} className="flex-1 px-0 py-2 text-[10px]">
+                      ACCEPT
+                    </Button>
+                    <Button variant="danger" size="sm" onClick={() => handleDeclineRequest(req.id)} className="px-3 py-2">
+                      <X size={14} strokeWidth={3} />
+                    </Button>
                   </div>
                 </div>
-              )) : <div className="p-4 text-center text-[var(--text-muted)] text-sm">No pending requests</div>
+              )) : <div className="p-8 text-center text-neo-ink/60 font-bold uppercase tracking-widest text-sm">No Requests</div>
             )}
           </div>
-        </GlassCard>
+        </div>
 
-        {/* Chat Area — hidden on mobile when no chat is selected */}
-        <GlassCard padding="none" className={cn('md:col-span-2 flex flex-col overflow-hidden bg-[var(--bg-surface)] relative', !selectedChat ? 'hidden md:flex' : 'flex')}>
+        {/* Chat Area */}
+        <div className={cn('md:col-span-2 flex flex-col bg-white relative', !selectedChat ? 'hidden md:flex' : 'flex')}>
           {activeTab === 'messages' && selectedChat ? (
             <>
               {/* Chat Header */}
-              <div className="p-3 sm:p-4 border-b border-[var(--glass-border)] bg-[var(--bg-surface-solid)] flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {/* Back button — mobile only */}
+              <div className="p-4 border-b-[4px] border-neo-ink bg-neo-cream flex items-center justify-between">
+                <div className="flex items-center gap-4">
                   <button
                     onClick={() => setSelectedChat(null)}
-                    className="md:hidden p-1.5 -ml-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg)] transition-colors"
-                    aria-label="Back to chat list"
+                    className="md:hidden w-10 h-10 flex items-center justify-center border-[2px] border-neo-ink bg-white rounded-md shadow-[2px_2px_0_#111111] active:shadow-none active:translate-y-[2px] active:translate-x-[2px]"
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                   </button>
                   {(() => {
                     const chat = activeChats.find(c => c.id === selectedChat);
                     const otherUser = chat?.requester_id === profile?.id ? chat?.receiver : chat?.requester;
                     return (
-                      <>
+                      <div className="flex items-center gap-4">
                         <div className="relative">
-                          <Image src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${otherUser?.username || 'user'}&backgroundColor=b6e3f4,c0aede,d1d4f9`} alt="Avatar" width={36} height={36} className="rounded-full bg-[var(--bg-surface-solid)]" />
+                          <Image src={`https://api.dicebear.com/9.x/bottts/svg?seed=${otherUser?.username || 'user'}&backgroundColor=FFF9E9`} alt="Avatar" width={48} height={48} className="rounded-md border-[2px] border-neo-ink bg-white shadow-[2px_2px_0_#111111]" />
                           {onlineUsers.has(otherUser?.id) && (
-                            <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></div>
+                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-neo-green border-2 border-neo-ink rounded-full shadow-[1px_1px_0_#111111]" />
                           )}
                         </div>
                         <div>
-                          <h3 className="font-semibold text-sm text-[var(--text-primary)]">{otherUser?.full_name || otherUser?.username}</h3>
-                          <span className="text-[10px] text-emerald-500 font-medium">
-                            {onlineUsers.has(otherUser?.id) ? 'Online' : 'Connected'}
+                          <h3 className="font-heading font-black text-xl uppercase tracking-tight text-neo-ink">{otherUser?.full_name || otherUser?.username}</h3>
+                          <span className={cn("text-[10px] font-bold uppercase tracking-widest", onlineUsers.has(otherUser?.id) ? "text-neo-green" : "text-neo-ink/50")}>
+                            {onlineUsers.has(otherUser?.id) ? 'ONLINE NOW' : 'OFFLINE'}
                           </span>
                         </div>
-                      </>
+                      </div>
                     );
                   })()}
                 </div>
               </div>
               
               {/* Messages Area */}
-              <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-5">
+              <div className="flex-1 p-6 overflow-y-auto flex flex-col gap-6 bg-[url('/grid.svg')] bg-center relative">
                 {chatMessages.map((msg) => {
                   const isMe = msg.sender_id === profile?.id;
                   const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                   return (
-                    <div key={msg.id} className={cn("flex flex-col max-w-[80%]", isMe ? "self-end items-end" : "self-start items-start")}>
+                    <div key={msg.id} className={cn("flex flex-col max-w-[85%]", isMe ? "self-end items-end" : "self-start items-start")}>
                       <div className={cn(
-                        "px-4 py-2.5 rounded-2xl shadow-sm relative group",
+                        "px-5 py-3 border-[3px] border-neo-ink shadow-[4px_4px_0_#111111] relative group",
                         isMe 
-                          ? "bg-accent-violet text-white rounded-br-sm" 
-                          : "bg-[var(--bg-surface-solid)] border border-[var(--glass-border)] text-[var(--text-primary)] rounded-bl-sm"
+                          ? "bg-neo-green text-neo-ink" 
+                          : "bg-neo-surface text-neo-ink"
                       )}>
-                        {msg.content && <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>}
+                        {msg.content && <p className="text-sm font-medium leading-relaxed whitespace-pre-wrap">{msg.content}</p>}
                         
                         {msg.attachment_url && (
-                          <div className="mt-2">
+                          <div className="mt-3">
                             {msg.attachment_type === 'image' && (
                               <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer">
-                                <Image src={msg.attachment_url} alt="Attached image" width={200} height={150} className="rounded-lg object-cover border border-white/20" />
+                                <Image src={msg.attachment_url} alt="Attached image" width={240} height={180} className="border-[2px] border-neo-ink object-cover shadow-[2px_2px_0_#111111]" />
                               </a>
                             )}
                             {msg.attachment_type === 'audio' && (
-                              <audio controls className="h-10 max-w-[200px] mt-1">
+                              <audio controls className="h-10 max-w-[240px]">
                                 <source src={msg.attachment_url} type="audio/webm" />
                               </audio>
                             )}
                             {msg.attachment_type !== 'image' && msg.attachment_type !== 'audio' && (
-                              <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-black/10 hover:bg-black/20 px-3 py-2 rounded-lg transition-colors text-sm">
-                                <FileText size={16} /> {msg.attachment_name || 'Document'}
+                              <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-white border-[2px] border-neo-ink px-4 py-2 font-bold uppercase text-xs shadow-[2px_2px_0_#111111] hover:-translate-y-0.5 transition-transform">
+                                <FileText size={16} strokeWidth={2.5} /> {msg.attachment_name || 'DOCUMENT'}
                               </a>
                             )}
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center gap-1 mt-1 text-[10px] text-[var(--text-muted)] px-1">
+                      <div className="flex items-center gap-1 mt-2 text-[10px] font-bold uppercase tracking-widest text-neo-ink/50 px-1">
                         <span>{timeStr}</span>
                         {isMe && (
-                          <span className={msg.is_read ? "text-accent-matcha" : ""}>
-                            <Check size={12} className={msg.is_read ? "opacity-100" : "opacity-60"} />
-                            {msg.is_read && <span className="ml-1">Read</span>}
+                          <span className={msg.is_read ? "text-neo-purple" : ""}>
+                            <Check size={14} strokeWidth={3} className={msg.is_read ? "opacity-100" : "opacity-40"} />
                           </span>
                         )}
                       </div>
@@ -545,53 +515,50 @@ export default function MessagesPage() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Advanced Message Input */}
-              <div className="p-4 border-t border-[var(--glass-border)] bg-[var(--bg-surface-solid)]">
+              {/* Input */}
+              <div className="p-4 border-t-[4px] border-neo-ink bg-neo-surface relative z-10">
                 {isUploading && (
-                  <div className="flex items-center gap-2 text-xs text-accent-violet mb-2 animate-pulse">
-                    <Loader2 size={12} className="animate-spin" /> Uploading attachment...
+                  <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-neo-purple mb-2 animate-pulse">
+                    <Loader2 size={14} className="animate-spin" /> UPLOADING ATTACHMENT...
                   </div>
                 )}
                 
-                <div className="flex items-end gap-2 bg-[var(--bg-surface)] border border-[var(--glass-border)] rounded-2xl p-2 focus-within:border-accent-violet/40 focus-within:ring-1 focus-within:ring-accent-violet/20 transition-all">
+                <div className="flex items-end gap-3 bg-white border-[3px] border-neo-ink p-2 shadow-[4px_4px_0_#111111] focus-within:shadow-[4px_4px_0_var(--ss-purple)] focus-within:border-neo-purple transition-all">
                   
-                  {/* Attachments Menu */}
                   <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileSelect} accept="image/*,.pdf,.doc,.docx" />
                   <button 
                     type="button" 
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isRecording || isUploading}
-                    className="p-2 text-[var(--text-muted)] hover:text-accent-violet transition-colors rounded-xl hover:bg-accent-violet/10 disabled:opacity-50"
+                    className="w-12 h-12 flex items-center justify-center shrink-0 border-[2px] border-transparent hover:border-neo-ink hover:bg-neo-yellow text-neo-ink transition-colors disabled:opacity-50"
                   >
-                    <Paperclip size={18} />
+                    <Paperclip size={20} strokeWidth={2.5} />
                   </button>
 
                   {isRecording ? (
-                    <div className="flex-1 flex items-center gap-3 py-2 px-3 text-accent-coral animate-pulse">
-                      <Mic size={16} /> 
-                      <span className="text-sm font-medium">Recording: {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}</span>
+                    <div className="flex-1 flex items-center gap-3 py-3 px-4 text-neo-coral animate-pulse font-heading font-black uppercase text-lg">
+                      <Mic size={20} strokeWidth={3} /> 
+                      RECORDING: {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
                     </div>
                   ) : (
                     <textarea 
                       value={inputText}
                       onChange={(e) => setInputText(e.target.value)}
                       onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-                      placeholder="Type a message..." 
+                      placeholder="TYPE YOUR MESSAGE..." 
                       rows={1}
                       disabled={isUploading}
-                      className="flex-1 bg-transparent border-none focus:outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none py-2 max-h-32 min-h-[40px] disabled:opacity-50"
+                      className="flex-1 bg-transparent border-none focus:outline-none text-base font-medium text-neo-ink placeholder:text-neo-ink/30 resize-none py-3 max-h-32 min-h-[48px] disabled:opacity-50"
                     />
                   )}
 
-                  {/* Actions (Mic & Send) */}
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2 shrink-0">
                     {isRecording ? (
                       <button 
                         onClick={stopRecording}
-                        className="p-2.5 rounded-xl bg-accent-coral text-white hover:opacity-90 transition-all mb-0.5 shadow-lg shadow-accent-coral/20"
-                        title="Stop & Send Voice Memo"
+                        className="w-12 h-12 flex items-center justify-center bg-neo-coral text-white border-[2px] border-neo-ink shadow-[2px_2px_0_#111111] active:shadow-none active:translate-y-[2px]"
                       >
-                        <div className="w-3 h-3 bg-white rounded-sm" />
+                        <div className="w-4 h-4 bg-white" />
                       </button>
                     ) : (
                       <button 
@@ -599,36 +566,35 @@ export default function MessagesPage() {
                         onClick={startRecording}
                         disabled={isUploading || inputText.trim().length > 0}
                         className={cn(
-                          "p-2.5 rounded-xl transition-all mb-0.5",
-                          inputText.trim() ? "text-[var(--text-muted)] opacity-30 cursor-not-allowed" : "text-[var(--text-muted)] hover:text-accent-violet hover:bg-accent-violet/10 disabled:opacity-50"
+                          "w-12 h-12 flex items-center justify-center border-[2px] transition-all",
+                          inputText.trim() ? "border-transparent text-neo-ink/20 cursor-not-allowed" : "border-transparent hover:border-neo-ink hover:bg-neo-coral hover:text-white hover:shadow-[2px_2px_0_#111111] text-neo-ink disabled:opacity-50"
                         )}
-                        title="Record Voice Memo"
                       >
-                        <Mic size={18} />
+                        <Mic size={20} strokeWidth={2.5} />
                       </button>
                     )}
 
                     <button 
                       onClick={handleSendMessage}
                       disabled={isUploading || (!inputText.trim() && !isRecording)}
-                      className="p-2.5 bg-gradient-to-tr from-accent-violet to-accent-amber text-white rounded-xl hover:opacity-90 transition-opacity shadow-md shadow-accent-violet/20 mb-0.5 disabled:opacity-50 disabled:grayscale"
-                      title="Send Message"
+                      className="w-12 h-12 flex items-center justify-center bg-neo-purple text-white border-[2px] border-neo-ink shadow-[2px_2px_0_#111111] hover:bg-neo-purple/90 disabled:opacity-50 disabled:grayscale active:shadow-none active:translate-y-[2px]"
                     >
-                      <Send size={16} className="ml-0.5" />
+                      <Send size={18} strokeWidth={3} className="-ml-1" />
                     </button>
                   </div>
                 </div>
               </div>
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-[var(--text-muted)]">
-              <div className="w-16 h-16 rounded-full bg-[var(--glass-bg)] border border-[var(--glass-border)] flex items-center justify-center mb-4">
-                <MessageSquare size={24} className="opacity-50" />
+            <div className="flex-1 flex flex-col items-center justify-center text-neo-ink/40 p-8 text-center bg-neo-surface">
+              <div className="w-24 h-24 rounded-full border-[4px] border-neo-ink/20 flex items-center justify-center mb-6">
+                <MessageSquare size={40} strokeWidth={2} />
               </div>
-              <p className="font-medium text-[var(--text-primary)]">Your Messages</p>
+              <p className="font-heading font-black text-2xl uppercase tracking-tight">Select a Chat</p>
+              <p className="font-bold uppercase tracking-widest text-xs mt-2">To start messaging</p>
             </div>
           )}
-        </GlassCard>
+        </div>
       </div>
     </div>
   );

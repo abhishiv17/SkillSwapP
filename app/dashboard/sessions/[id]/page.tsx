@@ -299,8 +299,8 @@ export default function VideoRoomPage() {
   }, [endingSession, sessionEnded, sessionId, hangUp, router]);
 
   /* Avatars (fallback when cam off / no stream) */
-  const peerAvatar = `https://api.dicebear.com/9.x/avataaars/svg?seed=${peerName}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
-  const myAvatar = `https://api.dicebear.com/9.x/avataaars/svg?seed=${profile?.username || 'User'}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+  const peerAvatar = `https://api.dicebear.com/9.x/bottts/svg?seed=${peerName}&backgroundColor=FFF9E9`;
+  const myAvatar = `https://api.dicebear.com/9.x/bottts/svg?seed=${profile?.username || 'User'}&backgroundColor=FFF9E9`;
 
   const isRemoteConnected = connectionState === 'connected';
   const isConnecting = connectionState === 'new' || connectionState === 'connecting';

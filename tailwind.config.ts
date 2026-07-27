@@ -1,7 +1,6 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
-  darkMode: 'class',
   content: [
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -9,7 +8,7 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        heading: ['var(--font-sora)', 'system-ui', 'sans-serif'],
+        heading: ['var(--font-space)', 'system-ui', 'sans-serif'],
         body: ['var(--font-dm-sans)', 'system-ui', 'sans-serif'],
       },
       colors: {
@@ -55,6 +54,21 @@ const config: Config = {
         'accent-emerald': '#10b981',
         'accent-amber': '#f59e0b',
         'accent-coral': '#ef4444',
+        
+        // Neo-Brutalist Colors
+        'neo-ink': '#111111',
+        'neo-cream': '#FFF9E9',
+        'neo-purple': '#7C3AED',
+        'neo-green': '#B7F34A',
+        'neo-yellow': '#FFD84D',
+        'neo-blue': '#4DA8FF',
+        'neo-coral': '#FF5C5C',
+        'neo-orange': '#FF8A34',
+      },
+      boxShadow: {
+        'neo-sm': '4px 4px 0 #111111',
+        'neo-md': '6px 6px 0 #111111',
+        'neo-lg': '8px 8px 0 #111111',
       },
       borderRadius: {
         xl: '1rem',

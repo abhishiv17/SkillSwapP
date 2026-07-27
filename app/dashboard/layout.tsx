@@ -1,44 +1,31 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/useUser';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import { TopBar } from '@/components/dashboard/TopBar';
 import { ChatbotWidget } from '@/components/shared/ChatbotWidget';
-import { ROUTES } from '@/lib/constants';
+import './dashboard.css';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, profile, skills, loading } = useUser();
-  const router = useRouter();
+  const { user, loading } = useUser();
 
-  useEffect(() => {
-    // `loading` is only true for ~5ms (localStorage read). No spinner needed.
-    if (loading) return;
-
-    if (!user) {
-      router.replace(ROUTES.login);
-      return;
-    }
-
-    // Only check onboarding once profile has loaded from DB.
-    // profile === null means "still fetching", not "no profile".
-    // profile !== null && skills.length === 0 means "profile loaded, no skills → onboarding".
-    if (profile && skills.length === 0) {
-      router.replace(ROUTES.onboarding);
-    }
-  }, [loading, user, profile, skills, router]);
-
-  // Auth not determined yet — render nothing (instant, < 10ms)
-  if (loading || !user) return null;
+  // Middleware guarantees we have a session by the time this renders.
+  // Show a brief loading state only while the client-side UserProvider hydrates.
+  if (loading || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-violet-500" />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen">
+    <div className="dashboard-shell min-h-screen flex w-full">
       <Sidebar />
       {/* Main content: pushed right on desktop (lg+), full width on mobile */}
-      <div className="lg:ml-[240px] transition-all duration-300">
+      <div className="flex-1 lg:ml-[240px] transition-all duration-300 min-w-0">
         <TopBar />
-        <main className="p-4 sm:p-6 pb-24 lg:pb-6 animate-page-in">
+        <main className="p-6 md:p-8 lg:p-10 pb-24 mx-auto w-full max-w-[1500px]">
           {children}
         </main>
       </div>
