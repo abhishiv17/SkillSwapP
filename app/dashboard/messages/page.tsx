@@ -220,7 +220,7 @@ export default function MessagesPage() {
                });
                
                if (newMessage.receiver_id === profile.id) {
-                  supabase.from('messages').update({ is_read: true, read_at: new Date().toISOString() }).eq('id', newMessage.id).then().catch(console.error);
+                  supabase.from('messages').update({ is_read: true, read_at: new Date().toISOString() }).eq('id', newMessage.id).then(({ error }) => { if (error) console.error(error); });
                }
            }
         }
